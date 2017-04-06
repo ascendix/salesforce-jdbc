@@ -13,7 +13,7 @@ Driver class name: com.ascendix.jdbc.salesforce.ForceDriver
 Database URL: jdbc:ascendix:salesforce://
 Sample connection string: jdbc:ascendix:salesforce://;User=myname@companyorg.com.xre.ci;Password=passwordandsecretkey
 
-**Warning!** password provided has to contain your password and sekret key in one sting;
+**Warning!** password provided has to contain your password and secret key in one sting;
 
 ## Supported features
 1. Queries supports native SOQL.

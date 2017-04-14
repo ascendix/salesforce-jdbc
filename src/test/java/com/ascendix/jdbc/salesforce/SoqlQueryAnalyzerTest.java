@@ -11,9 +11,7 @@ import java.util.stream.Collectors;
 
 import org.junit.Test;
 
-import com.ascendix.jdbc.salesforce.SoqlQueryAnalyzer.AbstractFieldDef;
 import com.ascendix.jdbc.salesforce.SoqlQueryAnalyzer.FieldDef;
-import com.ascendix.jdbc.salesforce.SoqlQueryAnalyzer.SubqueryFieldsDef;
 import com.sforce.soap.partner.DescribeSObjectResult;
 import com.thoughtworks.xstream.XStream;
 
@@ -29,8 +27,7 @@ public class SoqlQueryAnalyzerTest {
     }
 
     private List<String> listFlatFieldNames(SoqlQueryAnalyzer analyzer) {
-	return analyzer.getFieldDefinitions().stream()
-		.map(fd -> (SoqlQueryAnalyzer.FieldDef) fd)
+	return listFlatFieldDefinitions(analyzer.getFieldDefinitions()).stream()
 		.map(SoqlQueryAnalyzer.FieldDef::getName)
 		.collect(Collectors.toList());
     }
@@ -71,9 +68,11 @@ public class SoqlQueryAnalyzerTest {
 	assertEquals(expected, actual);
     }
     
-    private List<FieldDef> listFlatFieldDefinitions(List<AbstractFieldDef> fieldDefs) {
-	return fieldDefs.stream()
-		.map(fd -> (FieldDef) fd)
+    private List<FieldDef> listFlatFieldDefinitions(List<?> fieldDefs) {
+	return (List<FieldDef>) fieldDefs.stream()
+		.flatMap(def -> def instanceof List 
+			? ((List) def).stream() 
+			: Arrays.asList(def).stream())
 		.collect(Collectors.toList());
     }
 
@@ -155,19 +154,19 @@ public class SoqlQueryAnalyzerTest {
     public void testFetchFieldDefinitions_WithIncludedSeslect() {
 	SoqlQueryAnalyzer analyzer = new SoqlQueryAnalyzer("SELECT Name, (SELECT Id, max(LastName) maxLastName FROM Contacts), Id FROM Account", n -> this.describeSObject(n));
 	
-	List<AbstractFieldDef> actuals = analyzer.getFieldDefinitions();
+	List actuals = analyzer.getFieldDefinitions();
 	
 	assertEquals(3, actuals.size());
 	FieldDef fieldDef = (FieldDef) actuals.get(0);
 	assertEquals("Name", fieldDef.getName());
 	assertEquals("string", fieldDef.getType());
 	
-	SubqueryFieldsDef suqueryDef = (SubqueryFieldsDef) actuals.get(1);
-	fieldDef = (FieldDef) suqueryDef.getFieldDefs().get(0);
+	List suqueryDef = (List) actuals.get(1);
+	fieldDef = (FieldDef) suqueryDef.get(0);
 	assertEquals("Id", fieldDef.getName());
 	assertEquals("id", fieldDef.getType());
 	
-	fieldDef = (FieldDef) suqueryDef.getFieldDefs().get(1);
+	fieldDef = (FieldDef) suqueryDef.get(1);
 	assertEquals("maxLastName", fieldDef.getName());
 	assertEquals("string", fieldDef.getType());
 	

@@ -2,8 +2,10 @@ package com.ascendix.jdbc.salesforce.delegates;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.Spliterators;
@@ -11,7 +13,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.apache.commons.collections4.IteratorUtils;
+
 import com.ascendix.jdbc.salesforce.Column;
+import com.ascendix.jdbc.salesforce.SoqlQueryAnalyzer.FieldDef;
 import com.ascendix.jdbc.salesforce.Table;
 import com.sforce.soap.partner.DescribeGlobalResult;
 import com.sforce.soap.partner.DescribeGlobalSObjectResult;
@@ -128,64 +133,70 @@ public class PartnerService {
 	return result;
     }
 
-    public ForceQueryResult query(String soql) throws ConnectionException {
-	ForceQueryResult result = new ForceQueryResult();
+    public List<List> query(String soql, List<FieldDef> expectedSchema) throws ConnectionException {
+	List<List> resultRows = Collections.synchronizedList(new LinkedList<>());
 	QueryResult queryResult = null;
 	do {
-	    queryResult = queryResult == null
-		    ? partnerConnection.query(soql)
+	    queryResult = queryResult == null ? partnerConnection.query(soql)
 		    : partnerConnection.queryMore(queryResult.getQueryLocator());
-	    Arrays.stream(queryResult.getRecords()).parallel()
-			.forEach(record -> result.addRecord(toRecord(record)));
-	} while (! queryResult.isDone());
-	return result;
+	    resultRows.addAll(removeServiceInfo(Arrays.asList(queryResult.getRecords())));
+	} while (!queryResult.isDone());
+	
+	List<List> cartesianResult = PartnerResultToCrtesianTable.expand(resultRows, expectedSchema);
+//	ForceQueryResult result = new ForceQueryResult();
+//	cartesianResult.stream().forEach(row -> result.addRecord((List<ForceResultField>) row));
+	return cartesianResult;
     }
 
-    private List<ForceResultField> toRecord(XmlObject record) {
-	Set<ForceResultField> result = new LinkedHashSet<>();
-	toStream(record.getChildren())
-		.filter(this::acceptableObjectType)
-		.forEach(field -> {
-		    if (isNestedResultset(field)) {
-			List<List<ForceResultField>> nestedResult = toStream(field.getChildren())
-				.filter(f -> f instanceof SObject)
-				.map(f -> toRecord(f))
-				.collect(Collectors.toList());
-			String entityType = getEntityType(field);
-			ForceResultField resultSetField = new ForceResultField(entityType, ForceResultField.NESTED_RESULT_SET_FIELD_TYPE, entityType, nestedResult);
-			result.add(resultSetField);
-		    } else {
-			String name = field.getName().getLocalPart();
-			Object value = field.getValue();
-			String fieldType = field.getXmlType() != null ? field.getXmlType().getLocalPart() : null;
-			ForceResultField sfField = new ForceResultField(getEntityType(record), fieldType, name, value);
-			result.add(sfField);
-		    }
-		});
-	return new ArrayList<>(result);
+    private List<List> removeServiceInfo(Iterator<XmlObject> rows) {
+	return removeServiceInfo(IteratorUtils.toList(rows));
+    }
+    
+    private List<List> removeServiceInfo(List<XmlObject> rows) {
+	return rows.stream().parallel()
+		.filter(this::isDataObjectType)
+		.map(row -> removeServiceInfo(row))
+		.collect(Collectors.toList());
+    }
+    
+    private List removeServiceInfo(XmlObject row) {
+	return IteratorUtils.toList(row.getChildren()).stream()
+		.filter(this::isDataObjectType)
+		.skip(1) // Removes duplicate Id from SF Partner API response (https://developer.salesforce.com/forums/?id=906F00000008kciIAA)
+		.map(field -> isNestedResultset(field) 
+			? removeServiceInfo(((XmlObject) field).getChildren()) 
+			: toForceResultField(field))
+		.collect(Collectors.toList());
+    }
+
+    private ForceResultField toForceResultField(XmlObject field) {
+	String name = field.getName().getLocalPart();
+	Object value = field.getValue();
+	String fieldType = field.getXmlType() != null ? field.getXmlType().getLocalPart() : null;
+	return new ForceResultField(null, fieldType, name, value);
     }
 
     private boolean isNestedResultset(XmlObject object) {
 	return object.getXmlType() != null && "QueryResult".equals(object.getXmlType().getLocalPart());
     }
     
-    private final static List<String> SKIP_OBJECT_TYPES = Arrays.asList("type", "done", "queryLocator", "size");
+    private final static List<String> SOAP_RESPONSE_SERVICE_OBJECT_TYPES = Arrays.asList("type", "done", "queryLocator", "size");
     
-    private boolean acceptableObjectType(XmlObject object) {
-	return ! SKIP_OBJECT_TYPES.contains(object.getName().getLocalPart());
+    private boolean isDataObjectType(XmlObject object) {
+	return ! SOAP_RESPONSE_SERVICE_OBJECT_TYPES.contains(object.getName().getLocalPart());
     }
     
-    private <T> Stream<T> toStream(Iterator<T> iterator) {
-	return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false);
-    }
-    
-    private String getEntityType(XmlObject record) {
-	Iterator<XmlObject> fieldsIterator = record.getChildren();
-	return toStream(fieldsIterator)
-		.filter(field -> "type".equals(field.getName().getLocalPart()))
-		.map(field -> (String) field.getValue())
-		.findAny()
-		.orElse(null);
-    }
-
+//    private <T> Stream<T> toStream(Iterator<T> iterator) {
+//	return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false);
+//    }
+//    
+//    private String getEntityType(XmlObject record) {
+//	Iterator<XmlObject> fieldsIterator = record.getChildren();
+//	return toStream(fieldsIterator)
+//		.filter(field -> "type".equals(field.getName().getLocalPart()))
+//		.map(field -> (String) field.getValue())
+//		.findAny()
+//		.orElse(null);
+//    }
+//
 }

@@ -22,9 +22,7 @@ import com.sforce.soap.partner.Field;
 
 public class SoqlQueryAnalyzer {
     
-    public abstract class AbstractFieldDef {}
-    
-    public class FieldDef extends AbstractFieldDef {
+    public class FieldDef {
 	
 	private String name;
 	private String type;
@@ -44,20 +42,6 @@ public class SoqlQueryAnalyzer {
 
     }
     
-    public class SubqueryFieldsDef extends AbstractFieldDef {
-	
-	private List<AbstractFieldDef> fieldDefs;
-
-	public SubqueryFieldsDef(List<AbstractFieldDef> fieldDefs) {
-	    this.fieldDefs = fieldDefs;
-	}
-
-	public List<AbstractFieldDef> getFieldDefs() {
-	    return fieldDefs;
-	}
-
-    }
-    
     private String soql;
     private Function<String, DescribeSObjectResult> objectDescriptor;
     private Map<String, DescribeSObjectResult> describedObjectsCache;
@@ -73,7 +57,7 @@ public class SoqlQueryAnalyzer {
 	this.describedObjectsCache = describedObjectsCache;
     }
 
-    private List<AbstractFieldDef> fieldDefinitions;
+    private List fieldDefinitions;
     
     private class SelectSpecVisitor extends SOQLDataBaseVisitor<Void> {
 
@@ -132,13 +116,13 @@ public class SoqlQueryAnalyzer {
 	    subquery.setFromClause(new FromClause(new ObjectSpec(fromObject, null)));
 	    
 	    SoqlQueryAnalyzer subqueryAnalyzer = new SoqlQueryAnalyzer(subquery.toSOQLText(), objectDescriptor, describedObjectsCache);
-	    fieldDefinitions.add(new SubqueryFieldsDef(subqueryAnalyzer.getFieldDefinitions()));
+	    fieldDefinitions.add(new ArrayList(subqueryAnalyzer.getFieldDefinitions()));
 	    return null;
 	}
 	
     }
     
-    public List<AbstractFieldDef> getFieldDefinitions() {
+    public List getFieldDefinitions() {
 	if (fieldDefinitions == null) {
 	    fieldDefinitions = new ArrayList<>();
 	    SelectSpecVisitor visitor = new SelectSpecVisitor();

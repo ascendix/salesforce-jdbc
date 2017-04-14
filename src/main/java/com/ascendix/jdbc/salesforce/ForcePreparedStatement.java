@@ -29,14 +29,12 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,11 +49,9 @@ import org.mapdb.DataInput2;
 import org.mapdb.DataOutput2;
 import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
+import org.mule.tools.soql.exception.SOQLParsingException;
 
-import com.ascendix.jdbc.salesforce.SoqlQueryAnalyzer.AbstractFieldDef;
 import com.ascendix.jdbc.salesforce.SoqlQueryAnalyzer.FieldDef;
-import com.ascendix.jdbc.salesforce.SoqlQueryAnalyzer.SubqueryFieldsDef;
-import com.ascendix.jdbc.salesforce.delegates.ForceQueryResult;
 import com.ascendix.jdbc.salesforce.delegates.ForceResultField;
 import com.ascendix.jdbc.salesforce.delegates.PartnerService;
 import com.sforce.ws.ConnectionException;
@@ -140,149 +136,18 @@ public class ForcePreparedStatement implements PreparedStatement {
     private ResultSet query() throws SQLException {
 	try {
 	    String preparedSoql = prepareQuery();
-	    ForceQueryResult forceQueryResult = getPartnerService().query(preparedSoql);
-	    if (!forceQueryResult.getRecords().isEmpty()) {
-		forceQueryResult = flatten(forceQueryResult);
-		List<ColumnMap<String, Object>> maps = forceQueryResult.getRecords().stream().parallel()
+	    List<List> forceQueryResult = getPartnerService().query(preparedSoql, getFieldDefinitions());
+	    if (!forceQueryResult.isEmpty()) {
+		List<ColumnMap<String, Object>> maps = forceQueryResult.stream().parallel()
 			.map(record -> convertToColumnMap(record))
 			.collect(Collectors.toList());
 		return new CachedResultSet(maps, getMetaData());
 	    } else {
 		return new CachedResultSet(Collections.emptyList(), getMetaData());
 	    }
-	} catch (ConnectionException e) {
+	} catch (ConnectionException | SOQLParsingException e) {
 	    throw new SQLException(e);
 	}
-    }
-
-//    private ForceQueryResult flatten(ForceQueryResult forceQueryResult) {
-//	ForceQueryResult flattenResult = new ForceQueryResult();
-//	for (List<ForceResultField> record : forceQueryResult.getRecords()) {
-//	    List<ForceResultField> flattenRecord = record.stream()
-//		    .filter(fld -> fld.getFieldType() != ForceResultField.NESTED_RESULT_SET_FIELD_TYPE)
-//		    .collect(Collectors.toList());
-//	    List<List<ForceResultField>> cartesianTable = new LinkedList<>();
-//	    cartesianTable.add(flattenRecord);
-//	    AtomicInteger subqueryNumber = new AtomicInteger(0);
-//	    AtomicBoolean anySubqueryHasData = new AtomicBoolean(false);
-//	    record.stream()
-//		    .filter(fld -> fld.getFieldType() == ForceResultField.NESTED_RESULT_SET_FIELD_TYPE)
-//		    .forEach(subqueryResult -> {
-//			expandTable(cartesianTable, getPositionInGrid(subqueryNumber.get()), getSubqueryFieldsNum(subqueryNumber.get()));
-//			if (fillInAsCartesian(cartesianTable, subqueryResult, getPositionInGrid(subqueryNumber.get()))) {
-//			    anySubqueryHasData.set(true);
-//			}
-//			subqueryNumber.getAndIncrement();
-//		    });
-//	    if (! anySubqueryHasData.get()) {
-//		    
-//	    }
-//	    cartesianTable.stream().parallel().forEach(flattenResult::addRecord);
-//	}
-//	return flattenResult;
-//    }
-//
-    private boolean fillInAsCartesian(List<List<ForceResultField>> cartesianTable, ForceResultField subqueryResult, int positionInGrid) {
-	List<List<ForceResultField>> nestedResult = (List<List<ForceResultField>>) subqueryResult.getValue();
-	if (nestedResult.isEmpty()) return false;
-	List<List<ForceResultField>> syncCartesianTable = Collections.synchronizedList(cartesianTable);
-	List<List<ForceResultField>> initialCartesianTable = copyTable(cartesianTable);
-	nestedResult.stream().parallel()
-		.forEach(subqueryRow -> {
-		    List<List<ForceResultField>> initialSet = copyTable(initialCartesianTable);
-		    initialSet.stream().forEach(initialRow -> copy(subqueryRow, initialRow, positionInGrid));
-		    syncCartesianTable.addAll(initialSet);
-		});
-	return true;
-    }
-    
-    private <T> List<List<T>> copyTable(List<List<T>> src) {
-	return src.stream().parallel()
-		.map(row -> new ArrayList<>(row))
-		.collect(Collectors.toList());
-    }
-
-    private ForceQueryResult flatten(ForceQueryResult forceQueryResult) {
-	ForceQueryResult flattenResult = new ForceQueryResult();
-	for (List<ForceResultField> record : forceQueryResult.getRecords()) {
-	    List<ForceResultField> flattenRecord = record.stream()
-		    .filter(fld -> fld.getFieldType() != ForceResultField.NESTED_RESULT_SET_FIELD_TYPE)
-		    .collect(Collectors.toList());
-	    int subqueryResultMaxSize = record.stream()
-		    .filter(fld -> fld.getFieldType() == ForceResultField.NESTED_RESULT_SET_FIELD_TYPE)
-		    .mapToInt(fld -> ((List<ForceResultField>)fld.getValue()).size())
-		    .max()
-		    .orElse(0);
-	    List<List<ForceResultField>> cartesianTable = nCopies(subqueryResultMaxSize, flattenRecord);
-	    AtomicInteger subqueryNumber = new AtomicInteger(0);
-	    record.stream()
-		    .filter(fld -> fld.getFieldType() == ForceResultField.NESTED_RESULT_SET_FIELD_TYPE)
-		    .forEach(subqueryResult -> {
-			expandTable(cartesianTable, getPositionInGrid(subqueryNumber.get()), getSubqueryFieldsNum(subqueryNumber.get()));
-			fillInTable(cartesianTable, subqueryResult, getPositionInGrid(subqueryNumber.get()));
-			subqueryNumber.getAndIncrement();
-		    });
-	    cartesianTable.stream().forEach(flattenResult::addRecord);
-	}
-	return flattenResult;
-    }
-
-    private <T> List<List<T>> nCopies(int n, List<T> pattern) {
-	List<List<T>> result = new LinkedList<>();
-	for (int i = 0; i < n; i++) {
-	    result.add(new ArrayList<>(pattern));
-	}
-	return result;
-    }
-
-    private void fillInTable(List<List<ForceResultField>> cartesianTable, ForceResultField subqueryResult, int positionInGrid) {
-	AtomicInteger subqueryRowNum = new AtomicInteger(0);
-	List<List<ForceResultField>> nestedResult = (List<List<ForceResultField>>) subqueryResult.getValue();
-	nestedResult.stream()
-		.forEach(subqueryRow -> {
-		    List<ForceResultField> cartesianRow = cartesianTable.get(subqueryRowNum.getAndIncrement());
-		    copy(subqueryRow, cartesianRow, positionInGrid);
-		});
-    }
-    
-    private <T> void copy(List<T> src, List<T> dest, int index) {
-	AtomicInteger position = new AtomicInteger(index);
-	src.stream()
-	.forEach(fld -> {
-	    dest.remove(position.get());
-	    dest.add(position.get(), fld);
-	    position.getAndIncrement();
-	});
-    }
-
-    private void expandTable(List<List<ForceResultField>> cartesianTable, int positionInGrid, int subqueryFieldsNum) {
-	cartesianTable.stream()
-		.forEach(row -> row.addAll(positionInGrid, Collections.nCopies(subqueryFieldsNum, new ForceResultField(null, null, null, null))));
-    }
-
-    private int getSubqueryFieldsNum(int subqueryNumber) {
-	int number = 0;
-	for (AbstractFieldDef def : getFieldDefinitions()) {
-	    if (def instanceof SubqueryFieldsDef && number++ == subqueryNumber) {
-		return ((SubqueryFieldsDef) def).getFieldDefs().size();
-	    }
-	}
-	return -1;
-    }
-
-    private int getPositionInGrid(int subqueryNumber) {
-	int result = 0;
-	int number = 0;
-	for (AbstractFieldDef def : getFieldDefinitions()) {
-	    if (def instanceof FieldDef) {
-		result++;
-	    } else {
-		if (number == subqueryNumber) return result;
-		result += ((SubqueryFieldsDef) def).getFieldDefs().size();
-		number++;
-	    }
-	}
-	return -1;
     }
 
     private String prepareQuery() {
@@ -291,9 +156,11 @@ public class ForcePreparedStatement implements PreparedStatement {
 
     private ColumnMap<String, Object> convertToColumnMap(List<ForceResultField> record) {
 	ColumnMap<String, Object> columnMap = new ColumnMap<String, Object>();
-	record.stream().forEach(field -> {
-	    columnMap.put(field.getFullName(), field.getValue());
-	});
+	record.stream()
+		.map(field -> field == null ? new ForceResultField(null, null, null, null) : field)
+		.forEach(field -> {
+		    columnMap.put(field.getFullName(), field.getValue());
+		});
 	return columnMap;
     }
 
@@ -418,9 +285,17 @@ public class ForcePreparedStatement implements PreparedStatement {
 	}
     }
 
-    private List<AbstractFieldDef> fieldDefinitions;
+    private List<FieldDef> flatten(List fieldDefinitions) {
+	return (List<FieldDef>) fieldDefinitions.stream()
+		.flatMap(def -> def instanceof List 
+			? ((List) def).stream() 
+			: Arrays.asList(def).stream())
+		.collect(Collectors.toList());
+    }
     
-    private List<AbstractFieldDef> getFieldDefinitions() {
+    private List<FieldDef> fieldDefinitions;
+    
+    private List<FieldDef> getFieldDefinitions() {
 	if (fieldDefinitions == null) {
 	    fieldDefinitions = getQueryAnalyzer().getFieldDefinitions();
 	}
@@ -440,20 +315,6 @@ public class ForcePreparedStatement implements PreparedStatement {
 	    }, connection.getCache());
 	}
 	return queryAnalyzer;
-    }
-
-    private List<FieldDef> convertFromAbstractDefs(List<AbstractFieldDef> fieldDefinitions) {
-	return fieldDefinitions.stream()
-		.map(fd -> (FieldDef) fd)
-		.collect(Collectors.toList());
-    }
-    
-    private List<FieldDef> flatten(List<AbstractFieldDef> fieldDefinitions) {
-	return fieldDefinitions.stream()
-		.flatMap(def -> def instanceof FieldDef 
-			? Arrays.asList((FieldDef) def).stream()
-			: convertFromAbstractDefs(((SubqueryFieldsDef) def).getFieldDefs()).stream())
-		.collect(Collectors.toList());
     }
 
     @Override

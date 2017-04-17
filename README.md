@@ -13,7 +13,7 @@ Driver class name: com.ascendix.jdbc.salesforce.ForceDriver
 
 Database URL: jdbc:ascendix:salesforce://
 
-Sample connection string: jdbc:ascendix:salesforce://;User=myname@companyorg.com.xre.ci;Password=passwordandsecretkey
+Sample connection string: jdbc:ascendix:salesforce://;user=myname@companyorg.com.xre.ci;password=passwordandsecretkey
 
 **Warning!** A password provided has to contain your password and secret key in one sting;
 

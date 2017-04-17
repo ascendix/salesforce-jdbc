@@ -1,8 +1,10 @@
 package com.ascendix.jdbc.salesforce;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
+import java.io.IOException;
+import java.util.Properties;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -17,27 +19,21 @@ public class ForceDriverTest {
 	}
 
 	@Test
-	public void testGetUrlProperty_WhenFirst() {
-		String actual = driver.getUrlProperty("protocol://myProp = value", "myProp");
-		assertEquals(" value", actual);
+	public void testGetConnStringProperties() throws IOException {
+	    Properties actuals = driver.getConnStringProperties("jdbc:ascendix:salesforce://prop1=val1;prop2=val2");
+	    
+	    assertEquals(2, actuals.size());
+	    assertEquals("val1", actuals.getProperty("prop1"));
+	    assertEquals("val2", actuals.getProperty("prop2"));
 	}
 
 	@Test
-	public void testGetUrlProperty_WhenFirstWithoutSlashes() {
-		String actual = driver.getUrlProperty("protocol:myProp = value", "myProp");
-		assertEquals(" value", actual);
-	}
-
-	@Test
-	public void testGetUrlProperty_WhenNotFirst() {
-		String actual = driver.getUrlProperty("protocol://myProp2 = value2; myProp=value;", "myProp");
-		assertEquals("value", actual);
-	}
-
-	@Test
-	public void testGetUrlProperty_IfNotExists() {
-		String actual = driver.getUrlProperty("protocol://domain.com;myProp = value", "myProp2");
-		assertNull(actual);
+	public void testGetConnStringProperties_WhenNoValue() throws IOException {
+	    Properties actuals = driver.getConnStringProperties("jdbc:ascendix:salesforce://prop1=val1; prop2; prop3 = val3");
+	    
+	    assertEquals(3, actuals.size());
+	    assertTrue(actuals.containsKey("prop2"));
+	    assertEquals("", actuals.getProperty("prop2"));
 	}
 
 }

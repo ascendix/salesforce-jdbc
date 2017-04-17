@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -56,6 +57,7 @@ import com.ascendix.jdbc.salesforce.delegates.ForceResultField;
 import com.ascendix.jdbc.salesforce.delegates.PartnerService;
 import com.sforce.ws.ConnectionException;
 
+//@SuppressWarnings({"rawtypes", "unchecked"})
 public class ForcePreparedStatement implements PreparedStatement {
 
     private final static String CACHE_HINT = "(?is)\\A\\s*(CACHE\\s*(GLOBAL|SESSION)).*";
@@ -138,9 +140,9 @@ public class ForcePreparedStatement implements PreparedStatement {
 	    String preparedSoql = prepareQuery();
 	    List<List> forceQueryResult = getPartnerService().query(preparedSoql, getFieldDefinitions());
 	    if (!forceQueryResult.isEmpty()) {
-		List<ColumnMap<String, Object>> maps = forceQueryResult.stream().parallel()
-			.map(record -> convertToColumnMap(record))
-			.collect(Collectors.toList());
+		List<ColumnMap<String, Object>> maps = Collections.synchronizedList(new LinkedList<>());
+		forceQueryResult.stream().parallel()
+			.forEach(record -> maps.add(convertToColumnMap(record)));
 		return new CachedResultSet(maps, getMetaData());
 	    } else {
 		return new CachedResultSet(Collections.emptyList(), getMetaData());

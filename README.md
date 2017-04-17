@@ -6,7 +6,7 @@ The main purpose of the driver is to retrieve (only) data from Salesforce servic
 The current version of the driver should be compatible with **Salesforce Partner API version 39.0 and higher** and **Java 8**.
 
 ## Get the driver
-Download the driver [here](https://www.driver.com)
+Download the driver [here](blob/master/sfjdbc.jar)
 
 ## How to connect
 Driver class name: com.ascendix.jdbc.salesforce.ForceDriver 

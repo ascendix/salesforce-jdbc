@@ -18,7 +18,7 @@ Sample connection string: jdbc:ascendix:salesforce://;user=myname@companyorg.com
 **Warning!** A password provided has to contain your password and secret key in one sting;
 
 ## Supported features
-1. Queries supports native SOQL;
+1. Queries support native SOQL;
 2. Nested queries are supported;
 3. Request caching support on local drive. Canching supports 2 modes: global and session. Global mode means that the cached result will be accessible for all system users for certain JVM session. Session cache mode works for each Salesforce connection session separately. Both modes cache stores request result while JVM still running but no longer than for 1 hour. How to use cache feature:
   * Global cache mode:

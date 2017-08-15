@@ -112,31 +112,38 @@
 					<descriptor>assembly.xml</descriptor>
 				</configuration>
 			</plugin>
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>3.0.2</version>
-        <executions>
-          <execution>
-            <id>copy-resources</id>
-            <phase>validate</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${basedir}</outputDirectory>
-              <resources>          
-                <resource>
-                  <directory>/target</directory>
-                  <filtering>true</filtering>
-                  <includes>
-                  	<include>*.jar</include>
-                  </includes>
-                </resource>
-              </resources>              
-            </configuration>            
-          </execution>
-        </executions>
-      </plugin>
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.0.2</version>
+				<executions>
+					<execution>
+						<id>copy-resource-one</id>
+						<phase>install</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${basedir}</outputDirectory>
+							<resources>
+								<resource>
+									<directory>/target</directory>
+									<includes>
+										<include>sfjdbc.jar</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- <plugin> <groupId>ch.mfrey.maven.plugin</groupId> <artifactId>copy-maven-plugin</artifactId> 
+				<version>0.0.5</version> <executions> <execution> <id>copy</id> <phase>install</phase> 
+				<goals> <goal>copy</goal> </goals> <configuration> <showfiles>true</showfiles> 
+				<resources> <resource> <directory>${project.build.directory}</directory> 
+				<move>false</move> <replaceExisting>true</replaceExisting> <includes> <include>sfjdbc.java</include> 
+				</includes> <paths> <path> <from>${project.build.directory}</from> <to>${basedir}</to> 
+				</path> </paths> </resource> </resources> </configuration> </execution> </executions> 
+				</plugin> -->
 		</plugins>
 	</build>
 	<properties>

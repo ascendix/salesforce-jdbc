@@ -23,11 +23,11 @@ Sample connection string: jdbc:ascendix:salesforce://;user=myname@companyorg.com
 3. Request caching support on local drive. Canching supports 2 modes: global and session. Global mode means that the cached result will be accessible for all system users for certain JVM session. Session cache mode works for each Salesforce connection session separately. Both modes cache stores request result while JVM still running but no longer than for 1 hour. How to use cache feature:
   * Global cache mode:
   ```SQL
-  GLOBAL CACHE SELECT Id, Name FROM Account
+  CACHE GLOBAL SELECT Id, Name FROM Account
   ```
   * Session cache mode
   ```SQL
-  SESSION CACHE SELECT Id, Name FROM Account
+  CACHE SESSION SELECT Id, Name FROM Account
   ```
 
 ## Limitations

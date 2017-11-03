@@ -61,6 +61,19 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
 ## Limitations
 1. The driver is only for read-only purposes now. No insert/udate/delete functionality implemented yet.
 
+## Configure BIRT to use Salesforce JDBC driver
+
+1. [How to add a JDBC driver](https://help.eclipse.org/mars/index.jsp?topic=%2Forg.eclipse.birt.doc%2Fbirt%2Fcon-HowToAddAJDBCDriver.html)
+2. How to set configuration properties for Salesforce JDBC driver.
+
+  Birt provides various ways to set parameters for JDBC driver. For example, it can be done with the property binding feature in the data source editor and a report parameter. 
+  
+  [image](docs/birt/Data source - property binding.png)
+  
+  See how it works in [Salesforce JDBC sample](docs/birt/Salesforce JDBC sample.rptdesign)
+  
+
+
 ### Sponsors
 [Ascendix Technologies Inc.](https://ascendix.com/) <img src="http://ww1.prweb.com/prfiles/2006/12/12/490667/ascendixlogo.jpg" width=100 align="right"/>
 

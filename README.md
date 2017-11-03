@@ -68,9 +68,9 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
 
   Birt provides various ways to set parameters for JDBC driver. For example, it can be done with the property binding feature in the data source editor and a report parameter. 
   
-  [image](docs/birt/Data source - property binding.png)
+  ![image](/docs/birt/Data%20source%20-%20property%20binding.png)
   
-  See how it works in [Salesforce JDBC sample](docs/birt/Salesforce JDBC sample.rptdesign)
+  See how it works in [Salesforce JDBC sample](docs/birt/Salesforce%20JDBC%20sample.rptdesign)
   
 
 

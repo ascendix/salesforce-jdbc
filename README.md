@@ -32,17 +32,12 @@ An example for a connection URL with _sessionId_ parameter:
 jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
 ```
 ### Configuration Properties
-- _user_. Login username.
-
-- _password_. Login password associated with the specified username. 
-
-  **Warning!** A password provided should contains your password and secret key joined in one string.
-
-- _sessionId_. Unique ID associated with this session. 
-
-- _loginDomain_. Top-level domain for a login request. Default value is _login.salesforce.com_. Set _test.salesforce.com_ value to use sandbox.
-
-  
+| Property | Description |
+| --- | --- |
+| _user_ | Login username. |
+| _password_ |Login password associated with the specified username. <br>**Warning!** A password provided should contains your password and secret key joined in one string.|
+| _sessionId_ | Unique ID associated with this session. |
+| _loginDomain_ | Top-level domain for a login request. <br>Default value is _login.salesforce.com_. <br>Set _test.salesforce.com_ value to use sandbox. |
 
 
 ## Supported features
@@ -66,11 +61,11 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
 1. [How to add a JDBC driver](https://help.eclipse.org/mars/index.jsp?topic=%2Forg.eclipse.birt.doc%2Fbirt%2Fcon-HowToAddAJDBCDriver.html)
 2. How to set configuration properties for Salesforce JDBC driver.
 
-  Birt provides various ways to set parameters for JDBC driver. For example, it can be done with the property binding feature in the data source editor and a report parameter. 
+    Birt provides various ways to set parameters for JDBC driver. For example, it can be done with the property binding feature in the data source editor and a report parameter. 
   
-  ![image](/docs/birt/Data%20source%20-%20property%20binding.png)
+    ![image](/docs/birt/Data%20source%20-%20property%20binding.png)
   
-  See how it works in [Salesforce JDBC sample](docs/birt/Salesforce%20JDBC%20sample.rptdesign)
+     See how it's done in [Salesforce JDBC report sample](docs/birt/Salesforce%20JDBC%20sample.rptdesign)
   
 
 

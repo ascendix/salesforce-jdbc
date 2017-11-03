@@ -9,18 +9,46 @@ The current version of the driver should be compatible with **Salesforce Partner
 Download the driver [here](sfjdbc.jar)
 
 ## How to connect
-Driver class name: com.ascendix.jdbc.salesforce.ForceDriver 
 
-Database URL: jdbc:ascendix:salesforce://
+### Driver class name
+com.ascendix.jdbc.salesforce.ForceDriver 
 
-Sample connection string: jdbc:ascendix:salesforce://;user=myname@companyorg.com.xre.ci;password=passwordandsecretkey
+### JDBC URL format
+```
+jdbc:ascendix:salesforce://[;propertyName1=propertyValue1[;propertyName2=propertyValue2]...]
+```
+There are two ways to connect to salesforce:
+1. by using _user_ and _password_;
+2. by using _sessionId_.
 
-**Warning!** A password provided has to contain your password and secret key in one sting;
+_User_ and _password_ parameters are ignored if _sessionId_ parameter is set.
+
+An example for a connection URL with _user_ and _password_ parameters: 
+```
+jdbc:ascendix:salesforce://;user=myname@companyorg.com.xre.ci;password=passwordandsecretkey
+```
+An example for a connection URL with _sessionId_ parameter: 
+```
+jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
+```
+### Configuration Properties
+- _user_. Login username.
+
+- _password_. Login password associated with the specified username. 
+
+  **Warning!** A password provided should contains your password and secret key joined in one string.
+
+- _sessionId_. Unique ID associated with this session. 
+
+- _loginDomain_. Top-level domain for a login request. Default value is _login.salesforce.com_. Set _test.salesforce.com_ value to use sandbox.
+
+  
+
 
 ## Supported features
 1. Queries support native SOQL;
 2. Nested queries are supported;
-3. Request caching support on local drive. Canching supports 2 modes: global and session. Global mode means that the cached result will be accessible for all system users for certain JVM session. Session cache mode works for each Salesforce connection session separately. Both modes cache stores request result while JVM still running but no longer than for 1 hour. How to use cache feature:
+3. Request caching support on local drive. Canching supports 2 modes: global and session. Global mode means that the cached result will be accessible for all system users for certain JVM session. Session cache mode works for each Salesforce connection session separately. Both modes cache stores request result while JVM still running but no longer than for 1 hour. The cache mode can be enabled with a prefix of SOQL query. How to use:
   * Global cache mode:
   ```SQL
   CACHE GLOBAL SELECT Id, Name FROM Account
@@ -35,4 +63,6 @@ Sample connection string: jdbc:ascendix:salesforce://;user=myname@companyorg.com
 
 ### Sponsors
 [Ascendix Technologies Inc.](https://ascendix.com/) <img src="http://ww1.prweb.com/prfiles/2006/12/12/490667/ascendixlogo.jpg" width=100 align="right"/>
+
+
 

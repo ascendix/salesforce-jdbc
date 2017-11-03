@@ -15,11 +15,16 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.sforce.ws.ConnectionException;
 
 public class ForceDriver implements Driver {
 
     public static final String ACCEPTABLE_URL = "jdbc:ascendix:salesforce";
+    public static final String DEFAULT_API_VERSION = "39.0";
+    public static final String DEFAULT_LOGIN_DOMAIN = "login.salesforce.com";
+
     private ForceConnectionInfo info;
 
     static {
@@ -40,10 +45,19 @@ public class ForceDriver implements Driver {
 	    this.info = new ForceConnectionInfo();
 	    this.info.setUserName(info.getProperty("user"));
 	    this.info.setPassword(info.getProperty("password"));
+	    this.info.setSessionId(info.getProperty("sessionId"));
+	    this.info.setLoginDomain(info.getProperty("loginDomain", DEFAULT_LOGIN_DOMAIN));
+	    this.info.setApiVersion(DEFAULT_API_VERSION);
+	    this.info.setServiceEndpoint(getServiceEndpoint());
 	    return new ForceConnection(this.info);
 	} catch (ConnectionException | IOException e) {
 	    throw new SQLException(e);
 	}
+    }
+
+    private String getServiceEndpoint() throws IOException {
+	return StringUtils.isEmpty(info.getSessionId()) ? null
+		: ForceService.getPartnerUrl(info.getSessionId(), info.getLoginDomain(), info.getApiVersion());
     }
 
     protected Properties getConnStringProperties(String url) throws IOException {

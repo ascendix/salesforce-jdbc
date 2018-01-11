@@ -308,7 +308,7 @@ public class ForcePreparedStatement implements PreparedStatement {
     
     private SoqlQueryAnalyzer getQueryAnalyzer() {
 	if (queryAnalyzer == null) {
-	    queryAnalyzer = new SoqlQueryAnalyzer(soqlQuery, (objName) -> {
+	    queryAnalyzer = new SoqlQueryAnalyzer(prepareQuery(), (objName) -> {
 		try {
 		    return getPartnerService().describeSObject(objName);
 		} catch (ConnectionException e) {

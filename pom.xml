@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.ascendix.jdbc</groupId>
 	<artifactId>salesforce</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.1</version>
 	<repositories>
 		<repository>
 			<id>mulesoft-releases</id>

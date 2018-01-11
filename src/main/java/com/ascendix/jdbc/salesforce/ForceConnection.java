@@ -27,8 +27,6 @@ import com.sforce.ws.ConnectorConfig;
 
 public class ForceConnection implements Connection {
 
-    private static final String AUTH_ENDPIONT_URL = "https://login.salesforce.com/services/Soap/u/39.0";
-
     private DatabaseMetaData metadata;
     private ForceConnectionInfo info;
     private Map connectionCache = new HashMap<>();
@@ -49,9 +47,15 @@ public class ForceConnection implements Connection {
 
     public PartnerConnection getPartnerConnection() throws ConnectionException {
 	ConnectorConfig partnerConfig = new ConnectorConfig();
-	partnerConfig.setAuthEndpoint(AUTH_ENDPIONT_URL);
-	partnerConfig.setUsername(info.getUserName());
-	partnerConfig.setPassword(info.getPassword());
+	if (info.getServiceEndpoint() != null && info.getSessionId() != null) {
+	    partnerConfig.setServiceEndpoint(info.getServiceEndpoint());
+	    partnerConfig.setSessionId(info.getSessionId());
+	} else {
+	    partnerConfig.setAuthEndpoint(info.getAuthEndpoint());
+	    partnerConfig.setUsername(info.getUserName());
+	    partnerConfig.setPassword(info.getPassword());
+	}
+//	partnerConfig.setTraceMessage(true);
 	return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
     }
 

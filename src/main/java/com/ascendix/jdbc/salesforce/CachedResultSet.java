@@ -20,156 +20,373 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+
+import javax.sql.rowset.serial.SerialBlob;
 
 public class CachedResultSet implements ResultSet, Serializable {
+
+    private static final long serialVersionUID = 1L;
     
     private transient int index = -1;
     private List<ColumnMap<String, Object>> rows;
     private ResultSetMetaData metadata;
-    
+
     public CachedResultSet(List<ColumnMap<String, Object>> rows) {
-        this.rows = rows;
+	this.rows = rows;
     }
-    
+
     public CachedResultSet(List<ColumnMap<String, Object>> rows, ResultSetMetaData metadata) {
 	this(rows);
-        this.metadata = metadata;
+	this.metadata = metadata;
     }
-    
+
     public CachedResultSet(ColumnMap<String, Object> singleRow) {
-        this(Arrays.asList(singleRow));
+	this(Arrays.asList(singleRow));
     }
-    
+
     public Object getObject(String columnName) throws SQLException {
-        return rows.get(index).get(columnName.toUpperCase());
+	return rows.get(index).get(columnName.toUpperCase());
     }
 
     public Object getObject(int columnIndex) throws SQLException {
-        return rows.get(index).getByIndex(columnIndex);
+	return rows.get(index).getByIndex(columnIndex);
     }
 
     public String getString(String columnName) throws SQLException {
-        return (String) getObject(columnName);
+	return (String) getObject(columnName);
     }
 
     public String getString(int columnIndex) throws SQLException {
-        return (String) getObject(columnIndex);
-    }
-    
-    public long getLong(String columnName) throws SQLException {
-        return getLong(getObject(columnName));
+	return (String) getObject(columnIndex);
     }
 
-    public long getLong(int columnIndex) throws SQLException {
-        return getLong(getObject(columnIndex));
-    }
-
-    private long getLong(Object o) throws SQLException {
-        if (o == null) {
-            return 0;
-        } else if (o instanceof Number) {
-            return ((Number) o).longValue();
-        } else {
-            throw new SQLException("No type conversion to long available for " + o);
-        }
-    }
-
-    public int getInt(String columnName) throws SQLException {
-        return getInt(getObject(columnName));
-    }
-
-    public int getInt(int columnIndex) throws SQLException {
-        return getInt(getObject(columnIndex));
-    }
-
-    private int getInt(Object o) throws SQLException {
-        if (o == null) {
-            return 0;
-        } else if (o instanceof Number) {
-            return ((Number) o).intValue();
-        } else {
-            throw new SQLException("No type conversion to int available for " + o);
-        }
-    }
-    
-    public short getShort(String columnName) throws SQLException {
-        return getShort(getObject(columnName));
-    }
-
-    public short getShort(int columnIndex) throws SQLException {
-        return getShort(getObject(columnIndex));
-    }
-
-    private short getShort(Object o) throws SQLException {
-        if (o == null) {
-            return 0;
-        } else if (o instanceof Number) {
-            return ((Number) o).shortValue();
-        } else {
-            throw new SQLException("No type conversion to short available for " + o);
-        }
-    }
-
-    public Time getTime(String columnName) throws SQLException {
-        return (Time) getObject(columnName);
-    }
-
-    public Time getTime(int columnIndex) throws SQLException {
-        return (Time) getObject(columnIndex);
-    }
-    
     public boolean first() throws SQLException {
-        if (rows.size() > 0) {
-            index = 0;
-            return true;
-        } else {
-            return false;
-        }
+	if (rows.size() > 0) {
+	    index = 0;
+	    return true;
+	} else {
+	    return false;
+	}
     }
-    
+
     public boolean last() throws SQLException {
-        if (rows.size() > 0) {
-            index = rows.size() - 1;
-            return true;
-        } else {
-            return false;
-        }
+	if (rows.size() > 0) {
+	    index = rows.size() - 1;
+	    return true;
+	} else {
+	    return false;
+	}
     }
-    
+
     public boolean next() throws SQLException {
-        if (rows.size() > 0) {
-            index++;
-            return index < rows.size();
-        } else {
-            return false;
-        }
+	if (rows.size() > 0) {
+	    index++;
+	    return index < rows.size();
+	} else {
+	    return false;
+	}
     }
-    
+
     public boolean isAfterLast() throws SQLException {
-        return rows.size() > 0 && index == rows.size();
+	return rows.size() > 0 && index == rows.size();
     }
 
     public boolean isBeforeFirst() throws SQLException {
-        return rows.size() > 0 && index == -1;
+	return rows.size() > 0 && index == -1;
     }
 
     public boolean isFirst() throws SQLException {
-        return rows.size() > 0 && index == 0;
+	return rows.size() > 0 && index == 0;
     }
 
     public boolean isLast() throws SQLException {
-        return rows.size() > 0 && index == rows.size() - 1;
+	return rows.size() > 0 && index == rows.size() - 1;
     }
 
     public ResultSetMetaData getMetaData() throws SQLException {
 	return metadata != null ? metadata : new CachedResultSetMetaData();
     }
-    
+
     public void setFetchSize(int rows) throws SQLException {
+    }
+
+    public Date getDate(int columnIndex, Calendar cal) throws SQLException {
+	throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    public Date getDate(String columnName, Calendar cal) throws SQLException {
+	throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    private class ColumnValueParser<T> {
+
+	private Function<String, T> conversion;
+
+	public ColumnValueParser(Function<String, T> parser) {
+	    this.conversion = parser;
+	}
+
+	public Optional<T> parse(int columnIndex) {
+	    Object value = rows.get(index).getByIndex(columnIndex);
+	    return parse(value);
+	}
+
+	public Optional<T> parse(String columnName) {
+	    Object value = rows.get(index).get(columnName.toUpperCase());
+	    return parse(value);
+	}
+
+	private Optional<T> parse(Object o) {
+	    return o == null
+		    ? Optional.empty()
+		    : Optional.of(conversion.apply((String) o));
+	}
+
+    }
+
+    public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
+	return new ColumnValueParser<BigDecimal>(BigDecimal::new)
+		.parse(columnIndex)
+		.orElse(null);
+    }
+
+    public BigDecimal getBigDecimal(String columnName) throws SQLException {
+	return new ColumnValueParser<BigDecimal>(BigDecimal::new)
+		.parse(columnName)
+		.orElse(null);
+    }
+
+    private java.util.Date parseDate(String dateRepr) {
+	try {
+	    return new SimpleDateFormat("YYYY-MM-DD").parse((String) dateRepr);
+	} catch (ParseException e) {
+	    throw new RuntimeException(e);
+	}
+    }
+    
+    public Date getDate(int columnIndex) throws SQLException {
+	return new ColumnValueParser<java.util.Date>((v) -> parseDate((String) v))
+		.parse(columnIndex)
+		.map(d -> new java.sql.Date(d.getTime()))
+		.orElse(null);
+    }
+
+    public Date getDate(String columnName) throws SQLException {
+	return new ColumnValueParser<java.util.Date>((v) -> parseDate((String) v))
+		.parse(columnName)
+		.map(d -> new java.sql.Date(d.getTime()))
+		.orElse(null);
+    }
+
+    private java.util.Date parseDateTime(String dateRepr) {
+	try {
+	    return new SimpleDateFormat("YYYY-MM-DD'T'HH:mm:ss.SSSX").parse((String) dateRepr);
+	} catch (ParseException e) {
+	    throw new RuntimeException(e);
+	}
+    }
+    
+    public Timestamp getTimestamp(int columnIndex) throws SQLException {
+	return new ColumnValueParser<java.util.Date>((v) -> parseDateTime((String) v))
+		.parse(columnIndex)
+		.map(d -> new java.sql.Timestamp(d.getTime()))
+		.orElse(null);
+    }
+
+    public Timestamp getTimestamp(String columnName) throws SQLException {
+	return new ColumnValueParser<java.util.Date>((v) -> parseDateTime((String) v))
+		.parse(columnName)
+		.map(d -> new java.sql.Timestamp(d.getTime()))
+		.orElse(null);
+    }
+
+    public Timestamp getTimestamp(int columnIndex, Calendar cal)
+	    throws SQLException {
+	throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    public Timestamp getTimestamp(String columnName, Calendar cal)
+	    throws SQLException {
+	throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    private java.util.Date parseTime(String dateRepr) {
+	try {
+	    return new SimpleDateFormat("HH:mm:ss.SSSX").parse((String) dateRepr);
+	} catch (ParseException e) {
+	    throw new RuntimeException(e);
+	}
+    }
+    
+    public Time getTime(String columnName) throws SQLException {
+	return new ColumnValueParser<java.util.Date>((v) -> parseTime((String) v))
+		.parse(columnName)
+		.map(d -> new Time(d.getTime()))
+		.orElse(null);
+    }
+
+    public Time getTime(int columnIndex) throws SQLException {
+	return new ColumnValueParser<java.util.Date>((v) -> parseTime((String) v))
+		.parse(columnIndex)
+		.map(d -> new Time(d.getTime()))
+		.orElse(null);
+    }
+
+    public BigDecimal getBigDecimal(int columnIndex, int scale) {
+	Optional<BigDecimal> result = new ColumnValueParser<BigDecimal>(BigDecimal::new).parse(columnIndex);
+	result.ifPresent(v -> v.setScale(scale));
+	return result.orElse(null);
+    }
+
+    public BigDecimal getBigDecimal(String columnName, int scale) {
+	Optional<BigDecimal> result = new ColumnValueParser<BigDecimal>(BigDecimal::new).parse(columnName);
+	result.ifPresent(v -> v.setScale(scale));
+	return result.orElse(null);
+    }
+
+    public float getFloat(int columnIndex) throws SQLException {
+	return new ColumnValueParser<Float>(Float::new)
+		.parse(columnIndex)
+		.orElse(new Float(0))
+		.floatValue();
+    }
+
+    public float getFloat(String columnName) throws SQLException {
+	return new ColumnValueParser<Float>(Float::new)
+		.parse(columnName)
+		.orElse(new Float(0))
+		.floatValue();
+    }
+
+    public double getDouble(int columnIndex) throws SQLException {
+	return new ColumnValueParser<Double>(Double::new)
+		.parse(columnIndex)
+		.orElse(new Double(0))
+		.floatValue();
+    }
+
+    public double getDouble(String columnName) throws SQLException {
+	return new ColumnValueParser<Double>(Double::new)
+		.parse(columnName)
+		.orElse(new Double(0))
+		.doubleValue();
+    }
+
+    public long getLong(String columnName) throws SQLException {
+	return new ColumnValueParser<Long>(Long::new)
+		.parse(columnName)
+		.orElse(new Long(0))
+		.longValue();
+    }
+
+    public long getLong(int columnIndex) throws SQLException {
+	return new ColumnValueParser<Long>(Long::new)
+		.parse(columnIndex)
+		.orElse(new Long(0))
+		.longValue();
+    }
+
+    public int getInt(String columnName) throws SQLException {
+	return new ColumnValueParser<Integer>(Integer::new)
+		.parse(columnName)
+		.orElse(new Integer(0))
+		.intValue();
+    }
+
+    public int getInt(int columnIndex) throws SQLException {
+	return new ColumnValueParser<Integer>(Integer::new)
+		.parse(columnIndex)
+		.orElse(new Integer(0))
+		.intValue();
+    }
+
+    public short getShort(String columnName) throws SQLException {
+	return new ColumnValueParser<Short>(Short::new)
+		.parse(columnName)
+		.orElse(new Short((short) 0))
+		.shortValue();
+    }
+
+    public short getShort(int columnIndex) throws SQLException {
+	return new ColumnValueParser<Short>(Short::new)
+		.parse(columnIndex)
+		.orElse(new Short((short) 0))
+		.shortValue();
+    }
+
+    public InputStream getBinaryStream(int columnIndex) throws SQLException {
+	throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    public InputStream getBinaryStream(String columnName) throws SQLException {
+	throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    private Blob createBlob(byte[] data) {
+	try {
+	    return new SerialBlob(data);
+	} catch (SQLException e) {
+	    throw new RuntimeException(e);
+	}
+    }
+    
+    public Blob getBlob(int columnIndex) throws SQLException {
+	return new ColumnValueParser<byte[]>((v) -> Base64.getDecoder().decode(v))
+		.parse(columnIndex)
+		.map(d -> createBlob(d))
+		.orElse(null);
+    }
+
+    public Blob getBlob(String columnName) throws SQLException {
+	return new ColumnValueParser<byte[]>((v) -> Base64.getDecoder().decode(v))
+		.parse(columnName)
+		.map(d -> createBlob(d))
+		.orElse(null);
+    }
+
+    public boolean getBoolean(int columnIndex) throws SQLException {
+	return new ColumnValueParser<Boolean>(Boolean::new)
+		.parse(columnIndex)
+		.orElse(false)
+		.booleanValue();
+    }
+
+    public boolean getBoolean(String columnName) throws SQLException {
+	return new ColumnValueParser<Boolean>(Boolean::new)
+		.parse(columnName)
+		.orElse(false)
+		.booleanValue();
+    }
+
+    public byte getByte(int columnIndex) throws SQLException {
+	return new ColumnValueParser<Byte>(Byte::new)
+		.parse(columnIndex)
+		.orElse((byte) 0)
+		.byteValue();
+    }
+
+    public byte getByte(String columnName) throws SQLException {
+	return new ColumnValueParser<Byte>(Byte::new)
+		.parse(columnName)
+		.orElse((byte) 0)
+		.byteValue();
+    }
+
+    public byte[] getBytes(int columnIndex) throws SQLException {
+	throw new UnsupportedOperationException("Not implemented yet.");
+    }
+
+    public byte[] getBytes(String columnName) throws SQLException {
+	throw new UnsupportedOperationException("Not implemented yet.");
     }
 
     //
@@ -177,7 +394,7 @@ public class CachedResultSet implements ResultSet, Serializable {
     //
 
     public boolean absolute(int row) throws SQLException {
-        return false;
+	return false;
     }
 
     public void afterLast() throws SQLException {
@@ -194,280 +411,148 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public void close() throws SQLException {
- 
+
     }
 
     public void deleteRow() throws SQLException {
-        
+
     }
 
     public int findColumn(String columnName) throws SQLException {
 
-        return 0;
+	return 0;
     }
 
     public Array getArray(int i) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public Array getArray(String colName) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public InputStream getAsciiStream(int columnIndex) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public InputStream getAsciiStream(String columnName) throws SQLException {
 
-        return null;
-    }
-
-    public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-        return null;
-    }
-
-    public BigDecimal getBigDecimal(String columnName) throws SQLException {
-        return null;
-    }
-
-    public BigDecimal getBigDecimal(int columnIndex, int scale)
-            throws SQLException {
-
-        return null;
-    }
-
-    public BigDecimal getBigDecimal(String columnName, int scale)
-            throws SQLException {
-
-        return null;
-    }
-
-    public InputStream getBinaryStream(int columnIndex) throws SQLException {
-
-        return null;
-    }
-
-    public InputStream getBinaryStream(String columnName) throws SQLException {
-
-        return null;
-    }
-
-    public Blob getBlob(int i) throws SQLException {
-
-        return null;
-    }
-
-    public Blob getBlob(String colName) throws SQLException {
-
-        return null;
-    }
-
-    public boolean getBoolean(int columnIndex) throws SQLException {
-
-        return false;
-    }
-
-    public boolean getBoolean(String columnName) throws SQLException {
-
-        return false;
-    }
-
-    public byte getByte(int columnIndex) throws SQLException {
-
-        return 0;
-    }
-
-    public byte getByte(String columnName) throws SQLException {
-
-        return 0;
-    }
-
-    public byte[] getBytes(int columnIndex) throws SQLException {
-
-        return null;
-    }
-
-    public byte[] getBytes(String columnName) throws SQLException {
-
-        return null;
+	return null;
     }
 
     public Reader getCharacterStream(int columnIndex) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public Reader getCharacterStream(String columnName) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public Clob getClob(int i) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public Clob getClob(String colName) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public int getConcurrency() throws SQLException {
 
-        return 0;
+	return 0;
     }
 
     public String getCursorName() throws SQLException {
 
-        return null;
-    }
-
-    public Date getDate(int columnIndex) throws SQLException {
-
-        return null;
-    }
-
-    public Date getDate(String columnName) throws SQLException {
-
-        return null;
-    }
-
-    public Date getDate(int columnIndex, Calendar cal) throws SQLException {
-
-        return null;
-    }
-
-    public Date getDate(String columnName, Calendar cal) throws SQLException {
-
-        return null;
-    }
-
-    public double getDouble(int columnIndex) throws SQLException {
-
-        return 0;
-    }
-
-    public double getDouble(String columnName) throws SQLException {
-
-        return 0;
+	return null;
     }
 
     public int getFetchDirection() throws SQLException {
 
-        return 0;
+	return 0;
     }
 
     public int getFetchSize() throws SQLException {
 
-        return 0;
-    }
-
-    public float getFloat(int columnIndex) throws SQLException {
-
-        return 0;
-    }
-
-    public float getFloat(String columnName) throws SQLException {
-
-        return 0;
+	return 0;
     }
 
     public Object getObject(int i, Map<String, Class<?>> map)
-            throws SQLException {
+	    throws SQLException {
 
-        return null;
+	return null;
     }
 
     public Object getObject(String colName, Map<String, Class<?>> map)
-            throws SQLException {
+	    throws SQLException {
 
-        return null;
+	return null;
     }
 
     public Ref getRef(int i) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public Ref getRef(String colName) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public int getRow() throws SQLException {
 
-        return 0;
+	return 0;
     }
 
     public Statement getStatement() throws SQLException {
 
-        return null;
+	return null;
     }
 
     public Time getTime(int columnIndex, Calendar cal) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public Time getTime(String columnName, Calendar cal) throws SQLException {
 
-        return null;
-    }
-
-    public Timestamp getTimestamp(int columnIndex) throws SQLException {
-
-        return null;
-    }
-
-    public Timestamp getTimestamp(String columnName) throws SQLException {
-
-        return null;
-    }
-
-    public Timestamp getTimestamp(int columnIndex, Calendar cal)
-            throws SQLException {
-
-        return null;
-    }
-
-    public Timestamp getTimestamp(String columnName, Calendar cal)
-            throws SQLException {
-
-        return null;
+	return null;
     }
 
     public int getType() throws SQLException {
 
-        return 0;
+	return 0;
     }
 
     public URL getURL(int columnIndex) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public URL getURL(String columnName) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public InputStream getUnicodeStream(int columnIndex) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public InputStream getUnicodeStream(String columnName) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public SQLWarning getWarnings() throws SQLException {
 
-        return null;
+	return null;
     }
 
     public void insertRow() throws SQLException {
@@ -481,7 +566,7 @@ public class CachedResultSet implements ResultSet, Serializable {
 
     public boolean previous() throws SQLException {
 
-        return false;
+	return false;
     }
 
     public void refreshRow() throws SQLException {
@@ -489,22 +574,22 @@ public class CachedResultSet implements ResultSet, Serializable {
 
     public boolean relative(int rows) throws SQLException {
 
-        return false;
+	return false;
     }
 
     public boolean rowDeleted() throws SQLException {
 
-        return false;
+	return false;
     }
 
     public boolean rowInserted() throws SQLException {
 
-        return false;
+	return false;
     }
 
     public boolean rowUpdated() throws SQLException {
 
-        return false;
+	return false;
     }
 
     public void setFetchDirection(int direction) throws SQLException {
@@ -517,27 +602,27 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public void updateAsciiStream(int columnIndex, InputStream x, int length)
-            throws SQLException {
+	    throws SQLException {
     }
 
     public void updateAsciiStream(String columnName, InputStream x, int length)
-            throws SQLException {
+	    throws SQLException {
     }
 
     public void updateBigDecimal(int columnIndex, BigDecimal x)
-            throws SQLException {
+	    throws SQLException {
     }
 
     public void updateBigDecimal(String columnName, BigDecimal x)
-            throws SQLException {
+	    throws SQLException {
     }
 
     public void updateBinaryStream(int columnIndex, InputStream x, int length)
-            throws SQLException {
+	    throws SQLException {
     }
 
     public void updateBinaryStream(String columnName, InputStream x, int length)
-            throws SQLException {
+	    throws SQLException {
     }
 
     public void updateBlob(int columnIndex, Blob x) throws SQLException {
@@ -565,11 +650,11 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public void updateCharacterStream(int columnIndex, Reader x, int length)
-            throws SQLException {
+	    throws SQLException {
     }
 
     public void updateCharacterStream(String columnName, Reader reader,
-            int length) throws SQLException {
+	    int length) throws SQLException {
     }
 
     public void updateClob(int columnIndex, Clob x) throws SQLException {
@@ -621,11 +706,11 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public void updateObject(int columnIndex, Object x, int scale)
-            throws SQLException {
+	    throws SQLException {
     }
 
     public void updateObject(String columnName, Object x, int scale)
-            throws SQLException {
+	    throws SQLException {
     }
 
     public void updateRef(int columnIndex, Ref x) throws SQLException {
@@ -656,36 +741,36 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public void updateTimestamp(int columnIndex, Timestamp x)
-            throws SQLException {
+	    throws SQLException {
     }
 
     public void updateTimestamp(String columnName, Timestamp x)
-            throws SQLException {
+	    throws SQLException {
     }
 
     public boolean wasNull() throws SQLException {
 
-        return false;
+	return false;
     }
 
     public <T> T unwrap(Class<T> iface) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
 
-        return false;
+	return false;
     }
 
     public RowId getRowId(int columnIndex) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public RowId getRowId(String columnLabel) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public void updateRowId(int columnIndex, RowId x) throws SQLException {
@@ -696,12 +781,12 @@ public class CachedResultSet implements ResultSet, Serializable {
 
     public int getHoldability() throws SQLException {
 
-        return 0;
+	return 0;
     }
 
     public boolean isClosed() throws SQLException {
 
-        return false;
+	return false;
     }
 
     public void updateNString(int columnIndex, String nString) throws SQLException {
@@ -718,22 +803,22 @@ public class CachedResultSet implements ResultSet, Serializable {
 
     public NClob getNClob(int columnIndex) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public NClob getNClob(String columnLabel) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public SQLXML getSQLXML(int columnIndex) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public SQLXML getSQLXML(String columnLabel) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public void updateSQLXML(int columnIndex, SQLXML xmlObject) throws SQLException {
@@ -744,22 +829,22 @@ public class CachedResultSet implements ResultSet, Serializable {
 
     public String getNString(int columnIndex) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public String getNString(String columnLabel) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public Reader getNCharacterStream(int columnIndex) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public Reader getNCharacterStream(String columnLabel) throws SQLException {
 
-        return null;
+	return null;
     }
 
     public void updateNCharacterStream(int columnIndex, Reader x, long length) throws SQLException {

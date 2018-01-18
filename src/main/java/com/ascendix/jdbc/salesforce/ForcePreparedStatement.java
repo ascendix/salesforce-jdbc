@@ -141,7 +141,7 @@ public class ForcePreparedStatement implements PreparedStatement {
 	    List<List> forceQueryResult = getPartnerService().query(preparedSoql, getFieldDefinitions());
 	    if (!forceQueryResult.isEmpty()) {
 		List<ColumnMap<String, Object>> maps = Collections.synchronizedList(new LinkedList<>());
-		forceQueryResult.stream().parallel()
+		forceQueryResult.stream()
 			.forEach(record -> maps.add(convertToColumnMap(record)));
 		return new CachedResultSet(maps, getMetaData());
 	    } else {

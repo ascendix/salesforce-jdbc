@@ -2,6 +2,7 @@ package com.ascendix.jdbc.salesforce.delegates;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -137,11 +138,38 @@ public class PartnerService {
 	} while (!queryResult.isDone());
 	
 	List<List> cartesianResult = PartnerResultToCrtesianTable.expand(resultRows, expectedSchema);
-//	ForceQueryResult result = new ForceQueryResult();
-//	cartesianResult.stream().forEach(row -> result.addRecord((List<ForceResultField>) row));
+	//List<FieldDef> flatSchema = flatten(expectedSchema);
+	//encodeForceData(cartesianResult, flatSchema);
 	return cartesianResult;
     }
 
+    private void encodeForceData(List<List> resultSet, List<FieldDef> flatSchema) {
+	resultSet.parallelStream()
+		.forEach(row -> {
+		    List<ForceResultField> resultRow = (List<ForceResultField>) (List) row;
+		    for(int i = 0; i < resultRow.size(); i++) {
+			FieldDef fieldDef = flatSchema.get(i);
+			ForceResultField resultField = resultRow.get(i);
+			encodeForceData(resultField, fieldDef);
+		    }
+		});
+    }
+
+    private void encodeForceData(ForceResultField resultField, FieldDef fieldDef) {
+	if ("base64".equals(fieldDef.getType())) {
+	    byte[] encodedValue = Base64.getDecoder().decode((String) resultField.getValue());
+	    resultField.setValue(encodedValue);
+	}
+    }
+
+    protected List<FieldDef> flatten(List fieldDefinitions) {
+	return (List<FieldDef>)fieldDefinitions.stream()
+		.flatMap(def -> def instanceof List 
+			? flatten((List<FieldDef>) def).stream() 
+			: Arrays.asList(def).stream())
+		.collect(Collectors.toList());
+    }
+    
     private List<List> removeServiceInfo(Iterator<XmlObject> rows) {
 	return removeServiceInfo(IteratorUtils.toList(rows));
     }

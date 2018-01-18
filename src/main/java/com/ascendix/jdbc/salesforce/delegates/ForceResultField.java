@@ -27,7 +27,7 @@ public class ForceResultField {
     }
 
     public Object getValue() {
-        return value;
+        return  value;
     }
     
     public String getFullName() {
@@ -78,5 +78,9 @@ public class ForceResultField {
 
     public String getFieldType() {
         return fieldType;
+    }
+
+    public void setValue(Object value) {
+        this.value = value;
     }
 }

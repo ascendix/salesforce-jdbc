@@ -89,7 +89,7 @@ public class ForceDriver implements Driver {
 
     @Override
     public int getMinorVersion() {
-	return 0;
+	return 1;
     }
 
     @Override

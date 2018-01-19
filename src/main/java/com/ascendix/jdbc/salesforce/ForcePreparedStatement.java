@@ -1,6 +1,5 @@
 package com.ascendix.jdbc.salesforce;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -32,9 +31,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -46,8 +42,6 @@ import javax.sql.rowset.RowSetMetaDataImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
-import org.mapdb.DataInput2;
-import org.mapdb.DataOutput2;
 import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 import org.mule.tools.soql.exception.SOQLParsingException;
@@ -57,7 +51,6 @@ import com.ascendix.jdbc.salesforce.delegates.ForceResultField;
 import com.ascendix.jdbc.salesforce.delegates.PartnerService;
 import com.sforce.ws.ConnectionException;
 
-//@SuppressWarnings({"rawtypes", "unchecked"})
 public class ForcePreparedStatement implements PreparedStatement {
 
     private final static String CACHE_HINT = "(?is)\\A\\s*(CACHE\\s*(GLOBAL|SESSION)).*";
@@ -66,26 +59,6 @@ public class ForcePreparedStatement implements PreparedStatement {
 	NO_CACHE, GLOBAL, SESSION
     };
 
-    private final static Serializer<Future<ResultSet>> FUTURE_RESULT_SET_SERIALIZER = new Serializer<Future<ResultSet>>() {
-        
-        @SuppressWarnings("unchecked")
-	@Override
-        public void serialize(DataOutput2 out, Future<ResultSet> value) throws IOException {
-    		try {
-		    Serializer.ELSA.serialize(out, value.get());
-		} catch (InterruptedException | ExecutionException e) {
-		    throw new IOException(e);
-		}
-        }
-        
-        @Override
-        public Future<ResultSet> deserialize(DataInput2 in, int available) throws IOException {
-            ResultSet result = (ResultSet) Serializer.ELSA.deserialize(in, available);
-            return CompletableFuture.completedFuture(result);
-        }
-        
-    };
-    
     private String soqlQuery;
     private ForceConnection connection;
     private PartnerService partnerService;
@@ -118,7 +91,7 @@ public class ForcePreparedStatement implements PreparedStatement {
 	this.soqlQuery = soql;
     }
 
-    public static <T extends Throwable> RuntimeException rethrow(Throwable throwable) throws T {
+    public static <T extends Throwable> RuntimeException rethrowAsNonChecked(Throwable throwable) throws T {
 	    throw (T) throwable; // rely on vacuous cast
 	}
     
@@ -129,7 +102,7 @@ public class ForcePreparedStatement implements PreparedStatement {
 		    try {
 			return query();
 		    } catch (SQLException e) {
-			rethrow(e);
+			rethrowAsNonChecked(e);
 			return null;
 		    }
 		});
@@ -331,7 +304,7 @@ public class ForcePreparedStatement implements PreparedStatement {
 		    try {
 			return loadMetaData();
 		    } catch (SQLException e) {
-			rethrow(e);
+			rethrowAsNonChecked(e);
 			return null;
 		    }
 		});

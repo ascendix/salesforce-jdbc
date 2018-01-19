@@ -35,8 +35,8 @@ import javax.sql.rowset.serial.SerialBlob;
 public class CachedResultSet implements ResultSet, Serializable {
 
     private static final long serialVersionUID = 1L;
-    
-    private transient int index = -1;
+
+    private transient Integer index;
     private List<ColumnMap<String, Object>> rows;
     private ResultSetMetaData metadata;
 
@@ -54,11 +54,26 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public Object getObject(String columnName) throws SQLException {
-	return rows.get(index).get(columnName.toUpperCase());
+	return rows.get(getIndex()).get(columnName.toUpperCase());
     }
 
     public Object getObject(int columnIndex) throws SQLException {
-	return rows.get(index).getByIndex(columnIndex);
+	return rows.get(getIndex()).getByIndex(columnIndex);
+    }
+
+    private int getIndex() {
+	if (index == null) {
+	    index = -1;
+	}
+	return index;
+    }
+
+    private void setIndex(int i) {
+	index = i;
+    }
+
+    private void increaseIndex() {
+	index = getIndex() + 1;
     }
 
     public String getString(String columnName) throws SQLException {
@@ -71,7 +86,7 @@ public class CachedResultSet implements ResultSet, Serializable {
 
     public boolean first() throws SQLException {
 	if (rows.size() > 0) {
-	    index = 0;
+	    setIndex(0);
 	    return true;
 	} else {
 	    return false;
@@ -80,7 +95,7 @@ public class CachedResultSet implements ResultSet, Serializable {
 
     public boolean last() throws SQLException {
 	if (rows.size() > 0) {
-	    index = rows.size() - 1;
+	    setIndex(rows.size() - 1);
 	    return true;
 	} else {
 	    return false;
@@ -89,27 +104,27 @@ public class CachedResultSet implements ResultSet, Serializable {
 
     public boolean next() throws SQLException {
 	if (rows.size() > 0) {
-	    index++;
-	    return index < rows.size();
+	    increaseIndex();
+	    return getIndex() < rows.size();
 	} else {
 	    return false;
 	}
     }
 
     public boolean isAfterLast() throws SQLException {
-	return rows.size() > 0 && index == rows.size();
+	return rows.size() > 0 && getIndex() == rows.size();
     }
 
     public boolean isBeforeFirst() throws SQLException {
-	return rows.size() > 0 && index == -1;
+	return rows.size() > 0 && getIndex() == -1;
     }
 
     public boolean isFirst() throws SQLException {
-	return rows.size() > 0 && index == 0;
+	return rows.size() > 0 && getIndex() == 0;
     }
 
     public boolean isLast() throws SQLException {
-	return rows.size() > 0 && index == rows.size() - 1;
+	return rows.size() > 0 && getIndex() == rows.size() - 1;
     }
 
     public ResultSetMetaData getMetaData() throws SQLException {
@@ -136,12 +151,12 @@ public class CachedResultSet implements ResultSet, Serializable {
 	}
 
 	public Optional<T> parse(int columnIndex) {
-	    Object value = rows.get(index).getByIndex(columnIndex);
+	    Object value = rows.get(getIndex()).getByIndex(columnIndex);
 	    return parse(value);
 	}
 
 	public Optional<T> parse(String columnName) {
-	    Object value = rows.get(index).get(columnName.toUpperCase());
+	    Object value = rows.get(getIndex()).get(columnName.toUpperCase());
 	    return parse(value);
 	}
 
@@ -172,7 +187,7 @@ public class CachedResultSet implements ResultSet, Serializable {
 	    throw new RuntimeException(e);
 	}
     }
-    
+
     public Date getDate(int columnIndex) throws SQLException {
 	return new ColumnValueParser<java.util.Date>((v) -> parseDate((String) v))
 		.parse(columnIndex)
@@ -194,7 +209,7 @@ public class CachedResultSet implements ResultSet, Serializable {
 	    throw new RuntimeException(e);
 	}
     }
-    
+
     public Timestamp getTimestamp(int columnIndex) throws SQLException {
 	return new ColumnValueParser<java.util.Date>((v) -> parseDateTime((String) v))
 		.parse(columnIndex)
@@ -226,7 +241,7 @@ public class CachedResultSet implements ResultSet, Serializable {
 	    throw new RuntimeException(e);
 	}
     }
-    
+
     public Time getTime(String columnName) throws SQLException {
 	return new ColumnValueParser<java.util.Date>((v) -> parseTime((String) v))
 		.parse(columnName)
@@ -338,7 +353,7 @@ public class CachedResultSet implements ResultSet, Serializable {
 	    throw new RuntimeException(e);
 	}
     }
-    
+
     public Blob getBlob(int columnIndex) throws SQLException {
 	return new ColumnValueParser<byte[]>((v) -> Base64.getDecoder().decode(v))
 		.parse(columnIndex)
@@ -398,6 +413,7 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public void afterLast() throws SQLException {
+	System.out.println("after last check");
     }
 
     public void beforeFirst() throws SQLException {

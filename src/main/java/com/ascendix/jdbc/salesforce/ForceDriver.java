@@ -25,8 +25,6 @@ public class ForceDriver implements Driver {
     public static final String DEFAULT_API_VERSION = "39.0";
     public static final String DEFAULT_LOGIN_DOMAIN = "login.salesforce.com";
 
-    private ForceConnectionInfo info;
-
     static {
 	try {
 	    DriverManager.registerDriver(new ForceDriver());
@@ -35,29 +33,30 @@ public class ForceDriver implements Driver {
 	}
     }
 
-    public Connection connect(String url, Properties info) throws SQLException {
+    @Override
+    public Connection connect(String url, Properties properties) throws SQLException {
 	try {
 	    if (!acceptsURL(url)) {
 		throw new SQLException("Unknown URL format \"" + url + "\"");
 	    }
 	    Properties connStringProps = getConnStringProperties(url);
-	    info.putAll(connStringProps);
-	    this.info = new ForceConnectionInfo();
-	    this.info.setUserName(info.getProperty("user"));
-	    this.info.setPassword(info.getProperty("password"));
-	    this.info.setSessionId(info.getProperty("sessionId"));
-	    this.info.setLoginDomain(info.getProperty("loginDomain", DEFAULT_LOGIN_DOMAIN));
-	    this.info.setApiVersion(DEFAULT_API_VERSION);
-	    this.info.setServiceEndpoint(getServiceEndpoint());
-	    return new ForceConnection(this.info);
+	    properties.putAll(connStringProps);
+	    ForceConnectionInfo info = new ForceConnectionInfo();
+	    info.setUserName(properties.getProperty("user"));
+	    info.setPassword(properties.getProperty("password"));
+	    info.setSessionId(properties.getProperty("sessionId"));
+	    info.setLoginDomain(properties.getProperty("loginDomain", DEFAULT_LOGIN_DOMAIN));
+	    info.setApiVersion(DEFAULT_API_VERSION);
+	    info.setServiceEndpoint(getServiceEndpoint(info));
+	    return new ForceConnection(info);
 	} catch (ConnectionException | IOException e) {
 	    throw new SQLException(e);
 	}
     }
 
-    private String getServiceEndpoint() throws IOException {
-	return StringUtils.isEmpty(info.getSessionId()) ? null
-		: ForceService.getPartnerUrl(info.getSessionId(), info.getLoginDomain(), info.getApiVersion());
+    private String getServiceEndpoint(ForceConnectionInfo connectionInfo) throws IOException {
+	return StringUtils.isEmpty(connectionInfo.getSessionId()) ? null
+		: ForceService.getPartnerUrl(connectionInfo.getSessionId(), connectionInfo.getLoginDomain(), connectionInfo.getApiVersion());
     }
 
     protected Properties getConnStringProperties(String url) throws IOException {

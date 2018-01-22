@@ -2,7 +2,6 @@ package com.ascendix.jdbc.salesforce;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -67,14 +66,6 @@ public class ForcePreparedStatementTest {
 	assertEquals("SELECT Something FROM Anything WERE name = 'one' AND age > 123", actual);
     }
     
-    
-    @Test
-    public void testIsContainsCacheHint() {
-	ForcePreparedStatement statement = new ForcePreparedStatement(null, "");
-	
-	assertTrue(statement.isContainsCacheHint(" Cache global select name from Account"));
-	assertTrue(statement.isContainsCacheHint(" Cache global select name\r\nfrom Account"));
-    }
     
     @Test
     public void testGetCacheMode() {

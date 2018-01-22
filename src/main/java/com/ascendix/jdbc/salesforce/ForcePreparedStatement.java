@@ -24,7 +24,6 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +35,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.sql.rowset.RowSetMetaDataImpl;
 
@@ -54,6 +54,7 @@ import com.sforce.ws.ConnectionException;
 public class ForcePreparedStatement implements PreparedStatement {
 
     private final static String CACHE_HINT = "(?is)\\A\\s*(CACHE\\s*(GLOBAL|SESSION)).*";
+    private final static int GB = 1073741824;
 
     protected enum CacheMode {
 	NO_CACHE, GLOBAL, SESSION
@@ -68,33 +69,31 @@ public class ForcePreparedStatement implements PreparedStatement {
     private List<Object> parameters = new ArrayList<>();
     private CacheMode cacheMode = CacheMode.NO_CACHE;
     private static DB cacheDb = DBMaker.tempFileDB().closeOnJvmShutdown().make();
-    
-    //TODO: Join caches and move it to ForceConnection class. Divide to session and static global cache.
+
+    // TODO: Join caches and move it to ForceConnection class. Divide to session
+    // and static global cache.
     private static HTreeMap<String, ResultSet> dataCache = cacheDb
 	    .hashMap("DataCache", Serializer.STRING, Serializer.ELSA)
 	    .expireAfterCreate(60, TimeUnit.MINUTES)
-	    .expireStoreSize(16 * 1024*1024*1024)
+	    .expireStoreSize(16 * GB)
 	    .create();
     private static HTreeMap<String, ResultSetMetaData> metadataCache = cacheDb
 	    .hashMap("MetadataCache", Serializer.STRING, Serializer.ELSA)
 	    .expireAfterCreate(60, TimeUnit.MINUTES)
-	    .expireStoreSize(1 * 1024*1024*1024)
+	    .expireStoreSize(1 * GB)
 	    .create();
-    
-    
+
     public ForcePreparedStatement(ForceConnection connection, String soql) {
 	this.connection = connection;
-	if (isContainsCacheHint(soql)) {
-	    cacheMode = getCacheMode(soql);
-	    soql = removeCacheHints(soql);
-	}
-	this.soqlQuery = soql;
+	cacheMode = getCacheMode(soql);
+	this.soqlQuery = removeCacheHints(soql);
     }
 
     public static <T extends Throwable> RuntimeException rethrowAsNonChecked(Throwable throwable) throws T {
-	    throw (T) throwable; // rely on vacuous cast
-	}
-    
+	throw (T) throwable; // rely on vacuous cast
+    }
+
+    @Override
     public ResultSet executeQuery() throws SQLException {
 	return cacheMode == CacheMode.NO_CACHE
 		? query()
@@ -106,8 +105,8 @@ public class ForcePreparedStatement implements PreparedStatement {
 			return null;
 		    }
 		});
-    }    
-    
+    }
+
     private ResultSet query() throws SQLException {
 	try {
 	    String preparedSoql = prepareQuery();
@@ -159,16 +158,12 @@ public class ForcePreparedStatement implements PreparedStatement {
 	}
     }
 
-    protected boolean isContainsCacheHint(String query) {
-	return query.matches(CACHE_HINT);
-    }
-
     private String getCacheKey() throws SQLException {
 	try {
 	    String preparedQuery = prepareQuery();
 	    return cacheMode == CacheMode.GLOBAL
-	    	? preparedQuery
-	    	: connection.getPartnerConnection().getSessionHeader().getSessionId() + preparedQuery;
+		    ? preparedQuery
+		    : connection.getPartnerConnection().getSessionHeader().getSessionId() + preparedQuery;
 	} catch (ConnectionException e) {
 	    throw new SQLException(e);
 	}
@@ -187,7 +182,7 @@ public class ForcePreparedStatement implements PreparedStatement {
 	}
 	return parameters;
     }
-    
+
     protected String setParams(String soql) {
 	String result = soql;
 	for (Object param : getParameters()) {
@@ -262,14 +257,14 @@ public class ForcePreparedStatement implements PreparedStatement {
 
     private List<FieldDef> flatten(List fieldDefinitions) {
 	return (List<FieldDef>) fieldDefinitions.stream()
-		.flatMap(def -> def instanceof List 
-			? ((List) def).stream() 
-			: Arrays.asList(def).stream())
+		.flatMap(def -> def instanceof List
+			? ((List) def).stream()
+			: Stream.of(def))
 		.collect(Collectors.toList());
     }
-    
+
     private List<FieldDef> fieldDefinitions;
-    
+
     private List<FieldDef> getFieldDefinitions() {
 	if (fieldDefinitions == null) {
 	    fieldDefinitions = getQueryAnalyzer().getFieldDefinitions();
@@ -278,7 +273,7 @@ public class ForcePreparedStatement implements PreparedStatement {
     }
 
     private SoqlQueryAnalyzer queryAnalyzer;
-    
+
     private SoqlQueryAnalyzer getQueryAnalyzer() {
 	if (queryAnalyzer == null) {
 	    queryAnalyzer = new SoqlQueryAnalyzer(prepareQuery(), (objName) -> {
@@ -309,7 +304,7 @@ public class ForcePreparedStatement implements PreparedStatement {
 		    }
 		});
     }
-    
+
     private PartnerService getPartnerService() throws ConnectionException {
 	if (partnerService == null) {
 	    partnerService = new PartnerService(connection.getPartnerConnection());

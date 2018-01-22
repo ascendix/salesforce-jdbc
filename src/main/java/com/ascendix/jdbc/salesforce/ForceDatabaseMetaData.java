@@ -216,28 +216,6 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 	return new CachedResultSet(Collections.EMPTY_LIST);
     }
 
-    // @SuppressWarnings("unchecked")
-    // @Override
-    // public ResultSet getPrimaryKeys(String catalog, String schema, String
-    // table) throws SQLException {
-    // return new ForceResultSet(Collections.EMPTY_LIST);
-    // }
-    //
-    // @SuppressWarnings("unchecked")
-    // @Override
-    // public ResultSet getImportedKeys(String catalog, String schema, String
-    // table) throws SQLException {
-    // return new ForceResultSet(Collections.EMPTY_LIST);
-    // }
-    //
-    // @SuppressWarnings("unchecked")
-    // @Override
-    // public ResultSet getIndexInfo(String catalog, String schema, String
-    // table, boolean unique, boolean approximate)
-    // throws SQLException {
-    // return new ForceResultSet(Collections.EMPTY_LIST);
-    // }
-
     public static class TypeInfo {
 	public TypeInfo(String typeName, int sqlDataType, int precision, int minScale, int maxScale, int radix) {
 	    this.typeName = typeName;
@@ -392,7 +370,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 
     @Override
     public String getDriverVersion() throws SQLException {
-	return "1.0";
+	return "1.1";
     }
 
     @Override

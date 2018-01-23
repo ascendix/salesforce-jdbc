@@ -180,9 +180,9 @@ public class CachedResultSet implements ResultSet, Serializable {
 		.orElse(null);
     }
 
-    private java.util.Date parseDate(String dateRepr) {
+    protected java.util.Date parseDate(String dateRepr) {
 	try {
-	    return new SimpleDateFormat("YYYY-MM-DD").parse((String) dateRepr);
+	    return new SimpleDateFormat("yyyy-MM-dd").parse(dateRepr);
 	} catch (ParseException e) {
 	    throw new RuntimeException(e);
 	}
@@ -204,7 +204,7 @@ public class CachedResultSet implements ResultSet, Serializable {
 
     private java.util.Date parseDateTime(String dateRepr) {
 	try {
-	    return new SimpleDateFormat("YYYY-MM-DD'T'HH:mm:ss.SSSX").parse((String) dateRepr);
+	    return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX").parse(dateRepr);
 	} catch (ParseException e) {
 	    throw new RuntimeException(e);
 	}

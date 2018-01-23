@@ -54,7 +54,7 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
   ```
 
 ## Limitations
-1. The driver is only for read-only purposes now. No insert/udate/delete functionality implemented yet.
+1. The driver is only for read-only purposes now. Insert/udate/delete functionality is not implemented yet.
 
 ## Configure BIRT Studio to use Salesforce JDBC driver
 

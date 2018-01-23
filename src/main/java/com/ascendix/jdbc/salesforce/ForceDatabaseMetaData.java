@@ -109,12 +109,12 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 	return new CachedResultSet(maps);
     }
 
-    public static TypeInfo lookupTypeInfo(String forceTypeName) {
+    public static TypeInfo lookupTypeInfo(String forceTypeName) throws UnknownSalesforceTypeException {
 	String typeName = forceTypeName.replaceFirst("\\A_+", "");
 	return Arrays.stream(TYPE_INFO_DATA)
 		.filter(entry -> typeName.equals(entry.typeName))
-		.findFirst()
-		.orElse(null);
+		.findAny()
+		.orElseThrow(() -> new UnknownSalesforceTypeException(forceTypeName));
     }
 
     @Override

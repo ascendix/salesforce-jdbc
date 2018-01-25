@@ -114,7 +114,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 	return Arrays.stream(TYPE_INFO_DATA)
 		.filter(entry -> typeName.equals(entry.typeName))
 		.findAny()
-		.orElse(DEFAULT_TYPE_INFO);
+		.orElse(OTHER_TYPE_INFO);
     }
 
     @Override
@@ -234,7 +234,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 	public int radix;
     }
 
-    private static TypeInfo DEFAULT_TYPE_INFO = new TypeInfo("default", Types.VARCHAR, 0x7fffffff, 0, 0, 0);
+    private static TypeInfo OTHER_TYPE_INFO = new TypeInfo("other", Types.OTHER, 0x7fffffff, 0, 0, 0);
 
     private static TypeInfo TYPE_INFO_DATA[] = { 
 	    new TypeInfo("id", Types.VARCHAR, 0x7fffffff, 0, 0, 0),

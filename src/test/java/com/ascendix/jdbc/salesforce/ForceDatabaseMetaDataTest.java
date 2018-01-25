@@ -20,8 +20,8 @@ public class ForceDatabaseMetaDataTest {
     public void testLookupTypeInfo_IfTypeUnknown() {
 	ForceDatabaseMetaData.TypeInfo actual = ForceDatabaseMetaData.lookupTypeInfo("my strange type");
 	
-	assertEquals("default", actual.typeName);
-	assertEquals(Types.VARCHAR, actual.sqlDataType);
+	assertEquals("other", actual.typeName);
+	assertEquals(Types.OTHER, actual.sqlDataType);
     }
 
 }

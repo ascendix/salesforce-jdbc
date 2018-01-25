@@ -109,12 +109,12 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 	return new CachedResultSet(maps);
     }
 
-    public static TypeInfo lookupTypeInfo(String forceTypeName) throws UnknownSalesforceTypeException {
+    public static TypeInfo lookupTypeInfo(String forceTypeName) {
 	String typeName = forceTypeName.replaceFirst("\\A_+", "");
 	return Arrays.stream(TYPE_INFO_DATA)
 		.filter(entry -> typeName.equals(entry.typeName))
 		.findAny()
-		.orElseThrow(() -> new UnknownSalesforceTypeException(forceTypeName));
+		.orElse(DEFAULT_TYPE_INFO);
     }
 
     @Override
@@ -234,7 +234,10 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 	public int radix;
     }
 
-    private static TypeInfo TYPE_INFO_DATA[] = { new TypeInfo("id", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
+    private static TypeInfo DEFAULT_TYPE_INFO = new TypeInfo("default", Types.VARCHAR, 0x7fffffff, 0, 0, 0);
+
+    private static TypeInfo TYPE_INFO_DATA[] = { 
+	    new TypeInfo("id", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
 	    new TypeInfo("masterrecord", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
 	    new TypeInfo("reference", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
 	    new TypeInfo("string", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
@@ -244,17 +247,24 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 	    new TypeInfo("url", Types.VARCHAR, 0x7fffffff, 0, 0, 0),
 	    new TypeInfo("textarea", Types.LONGVARCHAR, 0x7fffffff, 0, 0, 0),
 	    new TypeInfo("base64", Types.BLOB, 0x7fffffff, 0, 0, 0),
-	    new TypeInfo("boolean", Types.BOOLEAN, 1, 0, 0, 0), new TypeInfo("_boolean", Types.BOOLEAN, 1, 0, 0, 0),
-	    new TypeInfo("byte", Types.VARBINARY, 10, 0, 0, 10), new TypeInfo("_byte", Types.VARBINARY, 10, 0, 0, 10),
-	    new TypeInfo("int", Types.INTEGER, 10, 0, 0, 10), new TypeInfo("_int", Types.INTEGER, 10, 0, 0, 10),
+	    new TypeInfo("boolean", Types.BOOLEAN, 1, 0, 0, 0), 
+	    new TypeInfo("_boolean", Types.BOOLEAN, 1, 0, 0, 0),
+	    new TypeInfo("byte", Types.VARBINARY, 10, 0, 0, 10), 
+	    new TypeInfo("_byte", Types.VARBINARY, 10, 0, 0, 10),
+	    new TypeInfo("int", Types.INTEGER, 10, 0, 0, 10), 
+	    new TypeInfo("_int", Types.INTEGER, 10, 0, 0, 10),
 	    new TypeInfo("decimal", Types.DECIMAL, 17, -324, 306, 10),
-	    new TypeInfo("double", Types.DOUBLE, 17, -324, 306, 10),
+	    new TypeInfo("double", Types.DOUBLE, 17, -324, 306, 10), 
 	    new TypeInfo("_double", Types.DOUBLE, 17, -324, 306, 10),
 	    new TypeInfo("percent", Types.DOUBLE, 17, -324, 306, 10),
-	    new TypeInfo("currency", Types.DOUBLE, 17, -324, 306, 10), new TypeInfo("date", Types.DATE, 10, 0, 0, 0),
-	    new TypeInfo("time", Types.TIME, 10, 0, 0, 0), new TypeInfo("datetime", Types.TIMESTAMP, 10, 0, 0, 0),
-	    new TypeInfo("picklist", Types.ARRAY, 0, 0, 0, 0), new TypeInfo("multipicklist", Types.ARRAY, 0, 0, 0, 0),
-	    new TypeInfo("combobox", Types.ARRAY, 0, 0, 0, 0), new TypeInfo("anyType", Types.OTHER, 0, 0, 0, 0),
+	    new TypeInfo("currency", Types.DOUBLE, 17, -324, 306, 10), 
+	    new TypeInfo("date", Types.DATE, 10, 0, 0, 0),
+	    new TypeInfo("time", Types.TIME, 10, 0, 0, 0), 
+	    new TypeInfo("datetime", Types.TIMESTAMP, 10, 0, 0, 0),
+	    new TypeInfo("picklist", Types.ARRAY, 0, 0, 0, 0), 
+	    new TypeInfo("multipicklist", Types.ARRAY, 0, 0, 0, 0),
+	    new TypeInfo("combobox", Types.ARRAY, 0, 0, 0, 0), 
+	    new TypeInfo("anyType", Types.OTHER, 0, 0, 0, 0),
 	    };
 
     @Override

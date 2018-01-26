@@ -125,7 +125,7 @@ public class ForcePreparedStatement implements PreparedStatement {
     }
 
     private String prepareQuery() {
-	return addFetchSize(setParams(soqlQuery));
+	return setParams(soqlQuery);
     }
 
     private ColumnMap<String, Object> convertToColumnMap(List<ForceResultField> record) {
@@ -167,13 +167,6 @@ public class ForcePreparedStatement implements PreparedStatement {
 	} catch (ConnectionException e) {
 	    throw new SQLException(e);
 	}
-    }
-
-    Pattern SOQL_HAS_LAST_FETCH_STATEMENT = Pattern.compile("(?i).*\\sLIMIT\\s+\\d+\\s*$");
-    private String addFetchSize(String soql) {
-	return fetchSize > 0 && !SOQL_HAS_LAST_FETCH_STATEMENT.matcher(soql).find()
-		? soql += " LIMIT " + fetchSize
-		: soql;
     }
 
     private List<? extends Object> getParameters() {

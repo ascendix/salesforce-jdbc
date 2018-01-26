@@ -37,7 +37,7 @@ public class PartnerService {
 		.map(so -> convertToTable(so))
 		.collect(Collectors.toList());
     }
-    
+
     public DescribeSObjectResult describeSObject(String sObjectType) throws ConnectionException {
 	return partnerConnection.describeSObject(sObjectType);
     }
@@ -135,59 +135,67 @@ public class PartnerService {
 		    : partnerConnection.queryMore(queryResult.getQueryLocator());
 	    resultRows.addAll(removeServiceInfo(Arrays.asList(queryResult.getRecords())));
 	} while (!queryResult.isDone());
-	
+
 	return PartnerResultToCrtesianTable.expand(resultRows, expectedSchema);
     }
 
     private List<List> removeServiceInfo(Iterator<XmlObject> rows) {
 	return removeServiceInfo(IteratorUtils.toList(rows));
     }
-    
+
     private List<List> removeServiceInfo(List<XmlObject> rows) {
 	return rows.stream().parallel()
 		.filter(this::isDataObjectType)
 		.map(row -> removeServiceInfo(row))
 		.collect(Collectors.toList());
     }
-    
+
     private List removeServiceInfo(XmlObject row) {
 	return IteratorUtils.toList(row.getChildren()).stream()
 		.filter(this::isDataObjectType)
-		.skip(1) // Removes duplicate Id from SF Partner API response (https://developer.salesforce.com/forums/?id=906F00000008kciIAA)
-		.map(field -> isNestedResultset(field) 
-			? removeServiceInfo(((XmlObject) field).getChildren()) 
+		.skip(1) // Removes duplicate Id from SF Partner API response
+			 // (https://developer.salesforce.com/forums/?id=906F00000008kciIAA)
+		.map(field -> isNestedResultset(field)
+			? removeServiceInfo(((XmlObject) field).getChildren())
 			: toForceResultField(field))
-		.collect(Collectors.toList());
+		.collect(Collectors.toList()); 
     }
 
     private ForceResultField toForceResultField(XmlObject field) {
-	String name = field.getName().getLocalPart();
-	Object value = field.getValue();
 	String fieldType = field.getXmlType() != null ? field.getXmlType().getLocalPart() : null;
+	if ("sObject".equalsIgnoreCase(fieldType)) {
+	     List<XmlObject> children = new ArrayList<>();
+	     field.getChildren().forEachRemaining(children::add);
+	     field = children.get(2);
+	}
+        String name = field.getName().getLocalPart();
+        Object value = field.getValue();
 	return new ForceResultField(null, fieldType, name, value);
     }
 
     private boolean isNestedResultset(XmlObject object) {
 	return object.getXmlType() != null && "QueryResult".equals(object.getXmlType().getLocalPart());
     }
-    
-    private final static List<String> SOAP_RESPONSE_SERVICE_OBJECT_TYPES = Arrays.asList("type", "done", "queryLocator", "size");
-    
+
+    private final static List<String> SOAP_RESPONSE_SERVICE_OBJECT_TYPES = Arrays.asList("type", "done", "queryLocator",
+	    "size");
+
     private boolean isDataObjectType(XmlObject object) {
-	return ! SOAP_RESPONSE_SERVICE_OBJECT_TYPES.contains(object.getName().getLocalPart());
+	return !SOAP_RESPONSE_SERVICE_OBJECT_TYPES.contains(object.getName().getLocalPart());
     }
-    
-//    private <T> Stream<T> toStream(Iterator<T> iterator) {
-//	return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false);
-//    }
-//    
-//    private String getEntityType(XmlObject record) {
-//	Iterator<XmlObject> fieldsIterator = record.getChildren();
-//	return toStream(fieldsIterator)
-//		.filter(field -> "type".equals(field.getName().getLocalPart()))
-//		.map(field -> (String) field.getValue())
-//		.findAny()
-//		.orElse(null);
-//    }
-//
+
+    // private <T> Stream<T> toStream(Iterator<T> iterator) {
+    // return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator,
+    // 0), false);
+    // }
+    //
+    // private String getEntityType(XmlObject record) {
+    // Iterator<XmlObject> fieldsIterator = record.getChildren();
+    // return toStream(fieldsIterator)
+    // .filter(field -> "type".equals(field.getName().getLocalPart()))
+    // .map(field -> (String) field.getValue())
+    // .findAny()
+    // .orElse(null);
+    // }
+    //
 }

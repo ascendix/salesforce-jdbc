@@ -169,8 +169,9 @@ public class ForcePreparedStatement implements PreparedStatement {
 	}
     }
 
+    Pattern SOQL_HAS_LAST_FETCH_STATEMENT = Pattern.compile("(?i).*\\sLIMIT\\s+\\d+\\s*$");
     private String addFetchSize(String soql) {
-	return fetchSize > 0
+	return fetchSize > 0 && !SOQL_HAS_LAST_FETCH_STATEMENT.matcher(soql).find()
 		? soql += " LIMIT " + fetchSize
 		: soql;
     }

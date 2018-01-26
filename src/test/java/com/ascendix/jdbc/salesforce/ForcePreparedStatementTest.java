@@ -7,6 +7,7 @@ import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.junit.Test;
 
@@ -80,7 +81,6 @@ public class ForcePreparedStatementTest {
     @Test
     public void removeCacheHints() {
 	ForcePreparedStatement statement = new ForcePreparedStatement(null, "");
-	
 	assertEquals("  select name from Account", statement.removeCacheHints(" Cache global select name from Account"));
     }
     

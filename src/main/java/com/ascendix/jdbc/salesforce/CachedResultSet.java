@@ -161,9 +161,9 @@ public class CachedResultSet implements ResultSet, Serializable {
 	}
 
 	private Optional<T> parse(Object o) {
-	    return o == null
-		    ? Optional.empty()
-		    : Optional.of(conversion.apply((String) o));
+	    if (o == null) return  Optional.empty();
+	    if (!(o instanceof String)) return (Optional<T>) Optional.of(o);
+	    return  Optional.of(conversion.apply((String) o));
 	}
 
     }

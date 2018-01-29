@@ -25,6 +25,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -211,17 +212,27 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public Timestamp getTimestamp(int columnIndex) throws SQLException {
-	return new ColumnValueParser<java.util.Date>((v) -> parseDateTime((String) v))
-		.parse(columnIndex)
-		.map(d -> new java.sql.Timestamp(d.getTime()))
-		.orElse(null);
+	Object value = rows.get(getIndex()).getByIndex(columnIndex);
+	if (value instanceof GregorianCalendar) {
+	    return new java.sql.Timestamp(((GregorianCalendar)value).getTime().getTime());
+	} else {
+	    return new ColumnValueParser<java.util.Date>((v) -> parseDateTime((String) v))
+		    .parse(columnIndex)
+		    .map(d -> new java.sql.Timestamp(d.getTime()))
+		    .orElse(null);
+	}
     }
 
     public Timestamp getTimestamp(String columnName) throws SQLException {
-	return new ColumnValueParser<java.util.Date>((v) -> parseDateTime((String) v))
-		.parse(columnName)
-		.map(d -> new java.sql.Timestamp(d.getTime()))
-		.orElse(null);
+	Object value = rows.get(getIndex()).get(columnName);
+	if (value instanceof GregorianCalendar) {
+	    return new java.sql.Timestamp(((GregorianCalendar)value).getTime().getTime());
+	} else {
+	    return new ColumnValueParser<java.util.Date>((v) -> parseDateTime((String) v))
+		    .parse(columnName)
+		    .map(d -> new java.sql.Timestamp(d.getTime()))
+		    .orElse(null);
+	}
     }
 
     public Timestamp getTimestamp(int columnIndex, Calendar cal)

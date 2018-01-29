@@ -119,12 +119,14 @@ public class SoqlQueryAnalyzer {
 	    return result;
 	}
 
-	private final List<String> FUNCTIONS_HAS_INT_RESULT = Arrays.asList("count", "count_distinct");
+	private final List<String> FUNCTIONS_HAS_INT_RESULT = Arrays.asList("COUNT", "COUNT_DISTINCT", "CALENDAR_MONTH", 
+		"CALENDAR_QUARTER", "CALENDAR_YEAR", "DAY_IN_MONTH", "DAY_IN_WEEK", "DAY_IN_YEAR", "DAY_ONLY", "FISCAL_MONTH",
+		"FISCAL_QUARTER", "FISCAL_YEAR", "HOUR_IN_DAY", "WEEK_IN_MONTH", "WEEK_IN_YEAR");
 	
 	@Override
 	public Void visitFunctionCallSpec(FunctionCallSpec functionCallSpec) {
 	    String alias = functionCallSpec.getAlias() != null ? functionCallSpec.getAlias() : functionCallSpec.getFunctionName();
-	    if (FUNCTIONS_HAS_INT_RESULT.contains(functionCallSpec.getFunctionName().toLowerCase())) {
+	    if (FUNCTIONS_HAS_INT_RESULT.contains(functionCallSpec.getFunctionName().toUpperCase())) {
 		fieldDefinitions.add(new FieldDef(alias, "int"));
 	    } else {
 		org.mule.tools.soql.query.data.Field param = (org.mule.tools.soql.query.data.Field) functionCallSpec.getFunctionParameters().get(0);

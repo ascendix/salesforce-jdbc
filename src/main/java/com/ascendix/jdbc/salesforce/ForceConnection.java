@@ -24,6 +24,8 @@ import java.util.logging.Logger;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
+import static com.ascendix.jdbc.salesforce.ForceDriver.DEFAULT_LOGIN_DOMAIN;
+import static com.ascendix.jdbc.salesforce.ForceDriver.SANDBOX_LOGIN_DOMAIN;
 
 public class ForceConnection implements Connection {
 
@@ -46,17 +48,51 @@ public class ForceConnection implements Connection {
     }
 
     public PartnerConnection getPartnerConnection() throws ConnectionException {
-	ConnectorConfig partnerConfig = new ConnectorConfig();
-	if (info.getServiceEndpoint() != null && info.getSessionId() != null) {
-	    partnerConfig.setServiceEndpoint(info.getServiceEndpoint());
-	    partnerConfig.setSessionId(info.getSessionId());
-	} else {
-	    partnerConfig.setAuthEndpoint(info.getAuthEndpoint());
-	    partnerConfig.setUsername(info.getUserName());
-	    partnerConfig.setPassword(info.getPassword());
-	}
-//	partnerConfig.setTraceMessage(true);
-	return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
+        return info.getSessionId() != null ? getConnectionBySessionId() : getConnectionByUserCredential();
+    }
+    private PartnerConnection getConnectionBySessionId() throws ConnectionException {
+        ConnectorConfig partnerConfig = new ConnectorConfig();
+        partnerConfig.setSessionId(info.getSessionId());
+        if(info.getLoginDomain() != null){
+            partnerConfig.setServiceEndpoint(ForceService.getPartnerUrl(info.getSessionId(), info.getLoginDomain(), info.getApiVersion()));
+            return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
+        }else{
+            info.setLoginDomain(DEFAULT_LOGIN_DOMAIN);
+            try {
+                partnerConfig.setServiceEndpoint(ForceService.getPartnerUrl(info.getSessionId(), info.getLoginDomain(), info.getApiVersion()));
+                return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
+            }
+            catch(RuntimeException re){
+                try {
+                    info.setLoginDomain(SANDBOX_LOGIN_DOMAIN);
+                    partnerConfig.setServiceEndpoint(ForceService.getPartnerUrl(info.getSessionId(), info.getLoginDomain(), info.getApiVersion()));
+                    return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
+                }
+                catch(RuntimeException r){
+                    throw new ConnectionException(r.getMessage());
+                }
+            }
+        }
+    }
+
+    private PartnerConnection getConnectionByUserCredential() throws ConnectionException {
+        ConnectorConfig partnerConfig = new ConnectorConfig();
+        partnerConfig.setUsername(info.getUserName());
+        partnerConfig.setPassword(info.getPassword());
+        if (info.getLoginDomain() != null) {
+            partnerConfig.setAuthEndpoint(info.getAuthEndpoint());
+            return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
+        } else {
+            try {
+                info.setLoginDomain(DEFAULT_LOGIN_DOMAIN);
+                partnerConfig.setAuthEndpoint(info.getAuthEndpoint());
+                return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
+            } catch (ConnectionException ce) {
+                info.setLoginDomain(SANDBOX_LOGIN_DOMAIN);
+                partnerConfig.setAuthEndpoint(info.getAuthEndpoint());
+                return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
+            }
+        }
     }
 
     @Override

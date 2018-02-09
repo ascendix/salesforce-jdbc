@@ -5,7 +5,6 @@ public class ForceConnectionInfo {
     private String userName;
     private String password;
     private String sessionId;
-    private String serviceEndpoint;
     private String apiVersion;
     private String loginDomain;
 
@@ -31,14 +30,6 @@ public class ForceConnectionInfo {
 
     public void setSessionId(String sessionId) {
 	this.sessionId = sessionId;
-    }
-
-    public String getServiceEndpoint() {
-	return serviceEndpoint;
-    }
-
-    public void setServiceEndpoint(String serviceEndpoint) {
-	this.serviceEndpoint = serviceEndpoint;
     }
 
     public String getAuthEndpoint() {

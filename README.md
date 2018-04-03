@@ -6,8 +6,7 @@ The main purpose of the driver is to retrieve (only) data from Salesforce servic
 The current version of the driver should be compatible with **Salesforce Partner API version 39.0 and higher** and **Java 8**.
 
 ## Get the driver
-Download the driver here:
-https://github.com/ascendix/mvnrepo/raw/master/com/ascendix/salesforce/salesforce-jdbc/1.1-SNAPSHOT/salesforce-jdbc-1.1-20180403.104727-1-single.jar
+Download the driver [here](https://github.com/ascendix/mvnrepo/raw/master/com/ascendix/salesforce/salesforce-jdbc/1.1-SNAPSHOT/salesforce-jdbc-1.1-20180403.104727-1-single.jar)
 
 
 ## With Maven

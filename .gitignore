@@ -1,2 +1,8 @@
-/target/
-/.metadata/
+.idea
+*.iml
+.classpath
+.project
+.settings
+*.log
+target
+.metadata

@@ -6,7 +6,34 @@ The main purpose of the driver is to retrieve (only) data from Salesforce servic
 The current version of the driver should be compatible with **Salesforce Partner API version 39.0 and higher** and **Java 8**.
 
 ## Get the driver
-Download the driver [here](sfjdbc.jar)
+Download the driver here:
+https://github.com/ascendix/mvnrepo/raw/master/com/ascendix/salesforce/salesforce-jdbc/1.1-SNAPSHOT/salesforce-jdbc-1.1-20180403.104727-1-single.jar
+
+
+## With Maven
+
+### Add repositories
+    <repositories>
+        <repository>
+            <id>com.ascendix.maven</id>
+            <name>Ascendix Maven Repo</name>
+            <url>https://github.com/ascendix/mvnrepo/raw/master</url>
+        </repository>
+        <repository>
+            <id>mulesoft-releases</id>
+            <name>MuleSoft Releases Repository</name>
+            <url>http://repository.mulesoft.org/releases/</url>
+            <layout>default</layout>
+        </repository>
+    </repositories>
+
+### Add dependency   
+    <dependency>
+        <groupId>com.ascendix.salesforce</groupId>
+        <artifactId>salesforce-jdbc</artifactId>
+        <version>1.1-20180403.104727-1</version>
+     </dependency>
+
 
 ## How to connect
 

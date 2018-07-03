@@ -17,40 +17,40 @@ public class ForceConnectionInfo {
     }
 
     public void setUserName(String userName) {
-	this.userName = userName;
+        this.userName = userName;
     }
 
     public void setPassword(String password) {
-	this.password = password;
+        this.password = password;
     }
 
     public String getSessionId() {
-	return sessionId;
+        return sessionId;
     }
 
     public void setSessionId(String sessionId) {
-	this.sessionId = sessionId;
+        this.sessionId = sessionId;
     }
 
     public String getAuthEndpoint() {
-	return String.format("https://%s/services/Soap/u/%s", getLoginDomain(), getApiVersion());
+        return String.format("https://%s/services/Soap/u/%s", getLoginDomain(), getApiVersion());
     }
 
 
     public String getApiVersion() {
-	return apiVersion;
+        return apiVersion;
     }
 
     public void setApiVersion(String apiVersion) {
-	this.apiVersion = apiVersion;
+        this.apiVersion = apiVersion;
     }
 
     public String getLoginDomain() {
-	return loginDomain;
+        return loginDomain;
     }
 
     public void setLoginDomain(String loginDomain) {
-	this.loginDomain = loginDomain;
+        this.loginDomain = loginDomain;
     }
 
 }

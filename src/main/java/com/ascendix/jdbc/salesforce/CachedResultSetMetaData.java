@@ -8,11 +8,11 @@ public class CachedResultSetMetaData implements ResultSetMetaData {
     public String getCatalogName(int column) throws SQLException {
         return "";
     }
-    
+
     //
     // Not implemented below here
     //
-    
+
     public String getColumnClassName(int column) throws SQLException {
 
         return null;

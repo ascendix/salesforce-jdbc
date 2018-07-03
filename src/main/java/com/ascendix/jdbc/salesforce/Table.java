@@ -12,12 +12,12 @@ public class Table implements Serializable {
     public Table(String name, String comments, List<Column> columns) {
         this.name = name;
         this.comments = comments;
-        this.columns = columns; 
+        this.columns = columns;
         for (Column c : columns) {
             c.setTable(this);
         }
     }
-    
+
     public String getName() {
         return name;
     }
@@ -29,12 +29,12 @@ public class Table implements Serializable {
     public List<Column> getColumns() {
         return columns;
     }
-    
+
     public Column findColumn(String columnName) {
-	return columns.stream()
-		.filter(column -> columnName.equals(column.getName()))
-		.findFirst()
-		.orElse(null);
+        return columns.stream()
+                .filter(column -> columnName.equals(column.getName()))
+                .findFirst()
+                .orElse(null);
     }
-    
+
 }

@@ -55,18 +55,17 @@ import java.util.StringJoiner;
  * <p>Question:
  * <a target="_blank" href="http://tinyurl.com/q7lbqeh">How to display or
  * print the contents of a database table as is</a><br>
- *     People: sky scraper</p>
+ * People: sky scraper</p>
  *
  * <p>Question:
  * <a target="_blank" href="http://tinyurl.com/pbwgess">System.out.println()
  * from database into a table</a><br>
- *     People: Simon Cottrill, Tony Toews, Costis Aivali, Riggy, corsiKa</p>
+ * People: Simon Cottrill, Tony Toews, Costis Aivali, Riggy, corsiKa</p>
  *
  * <p>Question:
  * <a target="_blank" href="http://tinyurl.com/7x9qtyg">Simple way to repeat
  * a string in java</a><br>
- *     People: Everybody who contributed but especially user102008</p>
- *
+ * People: Everybody who contributed but especially user102008</p>
  */
 public class DBTablePrinter {
 
@@ -179,11 +178,11 @@ public class DBTablePrinter {
          * java.sql.Types
          * </a>)
          *
-         * @param label Column label or name
-         * @param type Generic SQL type
+         * @param label    Column label or name
+         * @param type     Generic SQL type
          * @param typeName Generic SQL type name
          */
-        public Column (String label, int type, String typeName) {
+        public Column(String label, int type, String typeName) {
             this.label = label;
             this.type = type;
             this.typeName = typeName;
@@ -313,10 +312,10 @@ public class DBTablePrinter {
      * {@link #DEFAULT_MAX_TEXT_COL_WIDTH} will be used to limit
      * the width of text columns (like a <code>VARCHAR</code> column).
      *
-     * @param conn Database connection object (java.sql.Connection)
+     * @param conn      Database connection object (java.sql.Connection)
      * @param tableName Name of the database table
      */
-    public static void printTable(Connection conn, String tableName){
+    public static void printTable(Connection conn, String tableName) {
         printTable(conn, tableName, DEFAULT_MAX_ROWS, DEFAULT_MAX_TEXT_COL_WIDTH);
     }
 
@@ -328,9 +327,9 @@ public class DBTablePrinter {
      * {@link #DEFAULT_MAX_TEXT_COL_WIDTH} will be used to limit
      * the width of text columns (like a <code>VARCHAR</code> column).
      *
-     * @param conn Database connection object (java.sql.Connection)
+     * @param conn      Database connection object (java.sql.Connection)
      * @param tableName Name of the database table
-     * @param maxRows Number of max. rows to query and print
+     * @param maxRows   Number of max. rows to query and print
      */
     public static void printTable(Connection conn, String tableName, int maxRows) {
         printTable(conn, tableName, maxRows, DEFAULT_MAX_TEXT_COL_WIDTH);
@@ -344,9 +343,9 @@ public class DBTablePrinter {
      * <code>maxStringColWidth</code> will be used to limit
      * the width of text columns (like a <code>VARCHAR</code> column).
      *
-     * @param conn Database connection object (java.sql.Connection)
-     * @param tableName Name of the database table
-     * @param maxRows Number of max. rows to query and print
+     * @param conn              Database connection object (java.sql.Connection)
+     * @param tableName         Name of the database table
+     * @param maxRows           Number of max. rows to query and print
      * @param maxStringColWidth Max. width of text columns
      */
     public static void printTable(Connection conn, String tableName, int maxRows, int maxStringColWidth) {
@@ -416,7 +415,7 @@ public class DBTablePrinter {
      * ResultSet</a> to standard out using <code>maxStringColWidth</code>
      * to limit the width of text columns.
      *
-     * @param rs The <code>ResultSet</code> to print
+     * @param rs                The <code>ResultSet</code> to print
      * @param maxStringColWidth Max. width of text columns
      */
     public static void printResultSet(ResultSet rs, int maxStringColWidth) {
@@ -468,8 +467,8 @@ public class DBTablePrinter {
             int rowCount = 0;
             while (rs.next()) {
 
-        	System.out.println("row: " + rowCount);
-        	
+                System.out.println("row: " + rowCount);
+
                 // NOTE: columnIndex for rs.getXXX methods STARTS AT 1 NOT 0
                 for (int i = 0; i < columnCount; i++) {
                     Column c = columns.get(i);
@@ -483,7 +482,7 @@ public class DBTablePrinter {
                         value = "(" + c.getTypeName() + ")";
 
                     } else {
-                        value = rs.getString(i+1) == null ? "NULL" : rs.getString(i+1);
+                        value = rs.getString(i + 1) == null ? "NULL" : rs.getString(i + 1);
                     }
                     switch (category) {
                         case CATEGORY_DOUBLE:
@@ -492,7 +491,7 @@ public class DBTablePrinter {
                             // after the point. THIS IS TOTALLY ARBITRARY and can be
                             // improved to be CONFIGURABLE.
                             if (!value.equals("NULL")) {
-                                Double dValue = rs.getDouble(i+1);
+                                Double dValue = rs.getDouble(i + 1);
                                 value = String.format("%.3f", dValue);
                             }
                             break;
@@ -543,12 +542,12 @@ public class DBTablePrinter {
             for (Column c : columns) {
                 int width = c.getWidth();
 
-              // Center the column label
+                // Center the column label
                 String toPrint;
                 String name = c.getLabel();
                 int diff = width - name.length();
 
-                if ((diff%2) == 1) {
+                if ((diff % 2) == 1) {
                     // diff is not divisible by 2, add 1 to width (and diff)
                     // so that we can have equal padding to the left and right
                     // of the column label.
@@ -557,14 +556,14 @@ public class DBTablePrinter {
                     c.setWidth(width);
                 }
 
-                int paddingSize = diff/2; // InteliJ says casting to int is redundant.
+                int paddingSize = diff / 2; // InteliJ says casting to int is redundant.
 
                 // Cool String repeater code thanks to user102008 at stackoverflow.com
                 // (http://tinyurl.com/7x9qtyg) "Simple way to repeat a string in java"
                 String padding = new String(new char[paddingSize]).replace("\0", " ");
 
                 toPrint = "| " + padding + name + padding + " ";
-              // END centering the column label
+                // END centering the column label
 
                 strToPrint.append(toPrint);
 
@@ -642,7 +641,7 @@ public class DBTablePrinter {
      * Integers should not be truncated so column widths should
      * be adjusted without a column width limit. Text columns should be
      * left justified and can be truncated to a max. column width etc...</p>
-     *
+     * <p>
      * See also: <a target="_blank"
      * href="http://docs.oracle.com/javase/8/docs/api/java/sql/Types.html">
      * java.sql.Types</a>

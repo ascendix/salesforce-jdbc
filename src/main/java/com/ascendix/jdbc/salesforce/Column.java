@@ -3,13 +3,13 @@ package com.ascendix.jdbc.salesforce;
 import java.io.Serializable;
 
 public class Column implements Serializable {
-    
+
     private Table table;
     private String name;
     private String type;
     private String referencedTable;
     private String referencedColumn;
-    
+
     private Integer length;
     private boolean nillable;
     private String comments;
@@ -27,7 +27,7 @@ public class Column implements Serializable {
     public void setTable(Table table) {
         this.table = table;
     }
-    
+
     public String getName() {
         return name;
     }
@@ -59,7 +59,7 @@ public class Column implements Serializable {
     public void setNillable(boolean nillable) {
         this.nillable = nillable;
     }
-    
+
     public void setReferencedTable(String referencedTable) {
         this.referencedTable = referencedTable;
     }
@@ -75,7 +75,7 @@ public class Column implements Serializable {
     public void setComments(String comments) {
         this.comments = comments;
     }
-    
+
     public boolean isCalculated() {
         return calculated;
     }

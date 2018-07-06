@@ -1,4 +1,4 @@
-package com.ascendix.jdbc.salesforce;
+package com.ascendix.jdbc.salesforce.statement;
 
 public class FieldDef {
 

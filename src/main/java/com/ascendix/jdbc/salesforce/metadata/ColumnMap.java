@@ -1,4 +1,4 @@
-package com.ascendix.jdbc.salesforce;
+package com.ascendix.jdbc.salesforce.metadata;
 
 import java.io.Serializable;
 import java.util.ArrayList;

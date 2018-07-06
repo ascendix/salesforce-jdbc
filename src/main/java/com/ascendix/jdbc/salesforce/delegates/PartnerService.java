@@ -1,8 +1,8 @@
 package com.ascendix.jdbc.salesforce.delegates;
 
-import com.ascendix.jdbc.salesforce.Column;
-import com.ascendix.jdbc.salesforce.FieldDef;
-import com.ascendix.jdbc.salesforce.Table;
+import com.ascendix.jdbc.salesforce.metadata.Column;
+import com.ascendix.jdbc.salesforce.metadata.Table;
+import com.ascendix.jdbc.salesforce.statement.FieldDef;
 import com.sforce.soap.partner.DescribeGlobalResult;
 import com.sforce.soap.partner.DescribeGlobalSObjectResult;
 import com.sforce.soap.partner.DescribeSObjectResult;
@@ -33,7 +33,7 @@ public class PartnerService {
     public List<Table> getTables() {
         List<DescribeSObjectResult> sObjects = getSObjectsDescription();
         return sObjects.stream().parallel()
-                .map(so -> convertToTable(so))
+                .map(this::convertToTable)
                 .collect(Collectors.toList());
     }
 
@@ -44,7 +44,7 @@ public class PartnerService {
     private Table convertToTable(DescribeSObjectResult so) {
         List<Field> fields = Arrays.asList(so.getFields());
         List<Column> columns = fields.stream()
-                .map(f -> convertToColumn(f))
+                .map(this::convertToColumn)
                 .collect(Collectors.toList());
         return new Table(so.getName(), null, columns);
     }
@@ -81,7 +81,7 @@ public class PartnerService {
         if (sObjectTypesCache == null) {
             DescribeGlobalSObjectResult[] sobs = partnerConnection.describeGlobal().getSobjects();
             sObjectTypesCache = Arrays.stream(sobs).parallel()
-                    .map(sob -> sob.getName())
+                    .map(DescribeGlobalSObjectResult::getName)
                     .collect(Collectors.toList());
         }
         return sObjectTypesCache;
@@ -91,7 +91,7 @@ public class PartnerService {
     private List<DescribeSObjectResult> getSObjectsDescription() {
         DescribeGlobalResult describeGlobals = describeGlobal();
         List<String> tableNames = Arrays.stream(describeGlobals.getSobjects()).parallel()
-                .map(so -> so.getName())
+                .map(DescribeGlobalSObjectResult::getName)
                 .collect(Collectors.toList());
         List<List<String>> tableNamesBatched = toBatches(tableNames, 100);
         return tableNamesBatched.stream().parallel()
@@ -145,7 +145,7 @@ public class PartnerService {
     private List<List> removeServiceInfo(List<XmlObject> rows) {
         return rows.stream().parallel()
                 .filter(this::isDataObjectType)
-                .map(row -> removeServiceInfo(row))
+                .map(this::removeServiceInfo)
                 .collect(Collectors.toList());
     }
 
@@ -155,7 +155,7 @@ public class PartnerService {
                 .skip(1) // Removes duplicate Id from SF Partner API response
                 // (https://developer.salesforce.com/forums/?id=906F00000008kciIAA)
                 .map(field -> isNestedResultset(field)
-                        ? removeServiceInfo(((XmlObject) field).getChildren())
+                        ? removeServiceInfo(field.getChildren())
                         : toForceResultField(field))
                 .collect(Collectors.toList());
     }
@@ -182,19 +182,4 @@ public class PartnerService {
     private boolean isDataObjectType(XmlObject object) {
         return !SOAP_RESPONSE_SERVICE_OBJECT_TYPES.contains(object.getName().getLocalPart());
     }
-
-    // private <T> Stream<T> toStream(Iterator<T> iterator) {
-    // return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator,
-    // 0), false);
-    // }
-    //
-    // private String getEntityType(XmlObject record) {
-    // Iterator<XmlObject> fieldsIterator = record.getChildren();
-    // return toStream(fieldsIterator)
-    // .filter(field -> "type".equals(field.getName().getLocalPart()))
-    // .map(field -> (String) field.getValue())
-    // .findAny()
-    // .orElse(null);
-    // }
-    //
 }

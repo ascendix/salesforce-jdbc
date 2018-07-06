@@ -1,5 +1,7 @@
 package com.ascendix.jdbc.salesforce;
 
+import com.ascendix.jdbc.salesforce.connection.ForceConnection;
+import com.ascendix.jdbc.salesforce.connection.ForceConnectionInfo;
 import com.sforce.ws.ConnectionException;
 
 import java.io.ByteArrayInputStream;
@@ -19,8 +21,8 @@ import java.util.regex.Pattern;
 
 public class ForceDriver implements Driver {
 
-    public static final String ACCEPTABLE_URL = "jdbc:ascendix:salesforce";
-    public static final String DEFAULT_API_VERSION = "39.0";
+    private static final String ACCEPTABLE_URL = "jdbc:ascendix:salesforce";
+    private static final String DEFAULT_API_VERSION = "39.0";
     public static final String DEFAULT_LOGIN_DOMAIN = "login.salesforce.com";
     public static final String SANDBOX_LOGIN_DOMAIN = "test.salesforce.com";
 

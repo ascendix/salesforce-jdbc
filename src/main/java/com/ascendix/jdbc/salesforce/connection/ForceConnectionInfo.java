@@ -12,10 +12,5 @@ public class ForceConnectionInfo {
     private String password;
     private String sessionId;
     private String apiVersion;
-    private String loginDomain;
     private Boolean sandbox;
-
-    public String getAuthEndpoint() {
-        return String.format("https://%s/services/Soap/u/%s", getLoginDomain(), getApiVersion());
-    }
 }

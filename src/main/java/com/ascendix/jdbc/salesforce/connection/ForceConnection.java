@@ -2,10 +2,7 @@ package com.ascendix.jdbc.salesforce.connection;
 
 import com.ascendix.jdbc.salesforce.metadata.ForceDatabaseMetaData;
 import com.ascendix.jdbc.salesforce.statement.ForcePreparedStatement;
-import com.sforce.soap.partner.Connector;
 import com.sforce.soap.partner.PartnerConnection;
-import com.sforce.ws.ConnectionException;
-import com.sforce.ws.ConnectorConfig;
 
 import java.sql.Array;
 import java.sql.Blob;
@@ -28,18 +25,19 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.logging.Logger;
 
-import static com.ascendix.jdbc.salesforce.ForceDriver.DEFAULT_LOGIN_DOMAIN;
-import static com.ascendix.jdbc.salesforce.ForceDriver.SANDBOX_LOGIN_DOMAIN;
-
 public class ForceConnection implements Connection {
 
-    private DatabaseMetaData metadata;
-    private ForceConnectionInfo info;
+    private final PartnerConnection partnerConnection;
+    private final DatabaseMetaData metadata;
     private Map connectionCache = new HashMap<>();
 
-    public ForceConnection(ForceConnectionInfo info) throws ConnectionException {
-        this.info = info;
+    public ForceConnection(PartnerConnection partnerConnection) {
+        this.partnerConnection = partnerConnection;
         this.metadata = new ForceDatabaseMetaData(this);
+    }
+
+    public PartnerConnection getPartnerConnection() {
+        return partnerConnection;
     }
 
     public DatabaseMetaData getMetaData() {
@@ -49,52 +47,6 @@ public class ForceConnection implements Connection {
     @Override
     public PreparedStatement prepareStatement(String soql) {
         return new ForcePreparedStatement(this, soql);
-    }
-
-    public PartnerConnection getPartnerConnection() throws ConnectionException {
-        return info.getSessionId() != null ? getConnectionBySessionId() : getConnectionByUserCredential();
-    }
-
-    private PartnerConnection getConnectionBySessionId() throws ConnectionException {
-        ConnectorConfig partnerConfig = new ConnectorConfig();
-        partnerConfig.setSessionId(info.getSessionId());
-
-        if (info.getSandbox() != null) {
-            partnerConfig.setServiceEndpoint(ForceService.getPartnerUrl(info.getSessionId(), info.getSandbox(), info.getApiVersion()));
-            return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
-        }
-
-        try {
-            partnerConfig.setServiceEndpoint(ForceService.getPartnerUrl(info.getSessionId(), false, info.getApiVersion()));
-            return Connector.newConnection(partnerConfig);
-        } catch (RuntimeException re) {
-            try {
-                partnerConfig.setServiceEndpoint(ForceService.getPartnerUrl(info.getSessionId(), true, info.getApiVersion()));
-                return Connector.newConnection(partnerConfig);
-            } catch (RuntimeException r) {
-                throw new ConnectionException(r.getMessage());
-            }
-        }
-    }
-
-    private PartnerConnection getConnectionByUserCredential() throws ConnectionException {
-        ConnectorConfig partnerConfig = new ConnectorConfig();
-        partnerConfig.setUsername(info.getUserName());
-        partnerConfig.setPassword(info.getPassword());
-        if (info.getLoginDomain() != null) {
-            partnerConfig.setAuthEndpoint(info.getAuthEndpoint());
-            return Connector.newConnection(partnerConfig);
-        }
-
-        try {
-            info.setLoginDomain(DEFAULT_LOGIN_DOMAIN);
-            partnerConfig.setAuthEndpoint(info.getAuthEndpoint());
-            return Connector.newConnection(partnerConfig);
-        } catch (ConnectionException ce) {
-            info.setLoginDomain(SANDBOX_LOGIN_DOMAIN);
-            partnerConfig.setAuthEndpoint(info.getAuthEndpoint());
-            return Connector.newConnection(partnerConfig);
-        }
     }
 
     @Override
@@ -429,5 +381,4 @@ public class ForceConnection implements Connection {
         // TODO Auto-generated method stub
         return 0;
     }
-
 }

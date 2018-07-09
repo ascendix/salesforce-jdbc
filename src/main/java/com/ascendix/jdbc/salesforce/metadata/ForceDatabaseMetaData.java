@@ -1,9 +1,8 @@
 package com.ascendix.jdbc.salesforce.metadata;
 
-import com.ascendix.jdbc.salesforce.resultset.CachedResultSet;
 import com.ascendix.jdbc.salesforce.connection.ForceConnection;
 import com.ascendix.jdbc.salesforce.delegates.PartnerService;
-import com.sforce.ws.ConnectionException;
+import com.ascendix.jdbc.salesforce.resultset.CachedResultSet;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -25,7 +24,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
     private List<Table> tablesCache;
     private int counter;
 
-    public ForceDatabaseMetaData(ForceConnection connection) throws ConnectionException {
+    public ForceDatabaseMetaData(ForceConnection connection) {
         this.connection = connection;
         this.partnerService = new PartnerService(connection.getPartnerConnection());
     }

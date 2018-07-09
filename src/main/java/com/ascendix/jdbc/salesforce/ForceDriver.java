@@ -2,6 +2,8 @@ package com.ascendix.jdbc.salesforce;
 
 import com.ascendix.jdbc.salesforce.connection.ForceConnection;
 import com.ascendix.jdbc.salesforce.connection.ForceConnectionInfo;
+import com.ascendix.jdbc.salesforce.connection.ForceService;
+import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,8 +29,6 @@ public class ForceDriver implements Driver {
     private static final String ACCEPTABLE_URL = "jdbc:ascendix:salesforce";
     private static final Pattern URL_PATTERN = Pattern.compile("\\A" + ACCEPTABLE_URL + "://(.*)");
     private static final String DEFAULT_API_VERSION = "39.0";
-    public static final String DEFAULT_LOGIN_DOMAIN = "login.salesforce.com";
-    public static final String SANDBOX_LOGIN_DOMAIN = "test.salesforce.com";
 
     static {
         try {
@@ -52,7 +52,9 @@ public class ForceDriver implements Driver {
             info.setSessionId(properties.getProperty("sessionId"));
             info.setSandbox(resolveSandboxProperty(properties));
             info.setApiVersion(DEFAULT_API_VERSION);
-            return new ForceConnection(info);
+
+            PartnerConnection partnerConnection = ForceService.createPartnerConnection(info);
+            return new ForceConnection(partnerConnection);
         } catch (ConnectionException | IOException e) {
             throw new SQLException(e);
         }

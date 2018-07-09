@@ -1,11 +1,11 @@
 package com.ascendix.jdbc.salesforce.statement;
 
-import com.ascendix.jdbc.salesforce.resultset.CachedResultSet;
-import com.ascendix.jdbc.salesforce.metadata.ColumnMap;
 import com.ascendix.jdbc.salesforce.connection.ForceConnection;
 import com.ascendix.jdbc.salesforce.delegates.ForceResultField;
 import com.ascendix.jdbc.salesforce.delegates.PartnerService;
+import com.ascendix.jdbc.salesforce.metadata.ColumnMap;
 import com.ascendix.jdbc.salesforce.metadata.ForceDatabaseMetaData;
+import com.ascendix.jdbc.salesforce.resultset.CachedResultSet;
 import com.sforce.ws.ConnectionException;
 import org.apache.commons.lang3.StringUtils;
 import org.mapdb.DB;
@@ -158,15 +158,11 @@ public class ForcePreparedStatement implements PreparedStatement {
         }
     }
 
-    private String getCacheKey() throws SQLException {
-        try {
-            String preparedQuery = prepareQuery();
-            return cacheMode == CacheMode.GLOBAL
-                    ? preparedQuery
-                    : connection.getPartnerConnection().getSessionHeader().getSessionId() + preparedQuery;
-        } catch (ConnectionException e) {
-            throw new SQLException(e);
-        }
+    private String getCacheKey() {
+        String preparedQuery = prepareQuery();
+        return cacheMode == CacheMode.GLOBAL
+                ? preparedQuery
+                : connection.getPartnerConnection().getSessionHeader().getSessionId() + preparedQuery;
     }
 
     public List<Object> getParameters() {

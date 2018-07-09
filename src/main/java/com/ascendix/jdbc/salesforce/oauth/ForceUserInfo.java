@@ -4,6 +4,8 @@ import com.google.api.client.util.Key;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Map;
+
 @Data
 @NoArgsConstructor
 public class ForceUserInfo {
@@ -21,9 +23,6 @@ public class ForceUserInfo {
     @Key("locale")
     private String locale;
 
-    @Key("partner")
-    private String partnerEndpoint;
-
-    @Key("metadata")
-    private String metadataEndpoint;
+    @Key("urls")
+    private Map<String, String> urls;
 }

@@ -10,6 +10,7 @@ import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class ForceService {
@@ -33,9 +34,12 @@ public class ForceService {
     }
 
     private static String getPartnerUrlFromUserInfo(String accessToken, boolean sandbox) {
-        return new ForceOAuthClient(TIMEOUT, TIMEOUT, sandbox)
-                .getUserInfo(accessToken)
-                .getPartnerEndpoint();
+        Map<String, String> urls = new ForceOAuthClient(TIMEOUT, TIMEOUT, sandbox)
+                .getUserInfo(accessToken).getUrls();
+        if (urls == null || !urls.containsKey("partner")) {
+            throw new IllegalStateException("User info doesn't contain partner URL: " + urls);
+        }
+        return urls.get("partner");
     }
 
     public static PartnerConnection createPartnerConnection(ForceConnectionInfo info) throws ConnectionException {
@@ -48,7 +52,7 @@ public class ForceService {
 
         if (info.getSandbox() != null) {
             partnerConfig.setServiceEndpoint(ForceService.getPartnerUrl(info.getSessionId(), info.getSandbox(), info.getApiVersion()));
-            return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
+            return Connector.newConnection(partnerConfig);
         }
 
         try {

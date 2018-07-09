@@ -60,16 +60,6 @@
             <version>41.0.0</version>
         </dependency>
         <dependency>
-            <groupId>com.force.api</groupId>
-            <artifactId>force-metadata-api</artifactId>
-            <version>41.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-client</artifactId>
-            <version>1.19.3</version>
-        </dependency>
-        <dependency>
             <groupId>org.mapdb</groupId>
             <artifactId>mapdb</artifactId>
             <version>3.0.7</version>

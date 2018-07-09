@@ -32,7 +32,7 @@ public class PartnerService {
 
     public List<Table> getTables() {
         List<DescribeSObjectResult> sObjects = getSObjectsDescription();
-        return sObjects.stream().parallel()
+        return sObjects.stream()
                 .map(this::convertToTable)
                 .collect(Collectors.toList());
     }
@@ -80,7 +80,7 @@ public class PartnerService {
     private List<String> getSObjectTypes() throws ConnectionException {
         if (sObjectTypesCache == null) {
             DescribeGlobalSObjectResult[] sobs = partnerConnection.describeGlobal().getSobjects();
-            sObjectTypesCache = Arrays.stream(sobs).parallel()
+            sObjectTypesCache = Arrays.stream(sobs)
                     .map(DescribeGlobalSObjectResult::getName)
                     .collect(Collectors.toList());
         }
@@ -90,11 +90,11 @@ public class PartnerService {
 
     private List<DescribeSObjectResult> getSObjectsDescription() {
         DescribeGlobalResult describeGlobals = describeGlobal();
-        List<String> tableNames = Arrays.stream(describeGlobals.getSobjects()).parallel()
+        List<String> tableNames = Arrays.stream(describeGlobals.getSobjects())
                 .map(DescribeGlobalSObjectResult::getName)
                 .collect(Collectors.toList());
         List<List<String>> tableNamesBatched = toBatches(tableNames, 100);
-        return tableNamesBatched.stream().parallel()
+        return tableNamesBatched.stream()
                 .flatMap(batch -> describeSObjects(batch).stream())
                 .collect(Collectors.toList());
     }
@@ -143,7 +143,7 @@ public class PartnerService {
     }
 
     private List<List> removeServiceInfo(List<XmlObject> rows) {
-        return rows.stream().parallel()
+        return rows.stream()
                 .filter(this::isDataObjectType)
                 .map(this::removeServiceInfo)
                 .collect(Collectors.toList());

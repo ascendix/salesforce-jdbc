@@ -1,5 +1,11 @@
 package com.ascendix.jdbc.salesforce.connection;
 
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
 public class ForceConnectionInfo {
 
     private String userName;
@@ -7,50 +13,9 @@ public class ForceConnectionInfo {
     private String sessionId;
     private String apiVersion;
     private String loginDomain;
-
-    public String getUserName() {
-        return userName;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getSessionId() {
-        return sessionId;
-    }
-
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
-    }
+    private Boolean sandbox;
 
     public String getAuthEndpoint() {
         return String.format("https://%s/services/Soap/u/%s", getLoginDomain(), getApiVersion());
     }
-
-
-    public String getApiVersion() {
-        return apiVersion;
-    }
-
-    public void setApiVersion(String apiVersion) {
-        this.apiVersion = apiVersion;
-    }
-
-    public String getLoginDomain() {
-        return loginDomain;
-    }
-
-    public void setLoginDomain(String loginDomain) {
-        this.loginDomain = loginDomain;
-    }
-
 }

@@ -2,6 +2,7 @@ package com.ascendix.jdbc.salesforce.connection;
 
 import com.ascendix.jdbc.salesforce.metadata.ForceDatabaseMetaData;
 import com.ascendix.jdbc.salesforce.statement.ForcePreparedStatement;
+import com.sforce.soap.partner.Connector;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
@@ -41,12 +42,12 @@ public class ForceConnection implements Connection {
         this.metadata = new ForceDatabaseMetaData(this);
     }
 
-    public DatabaseMetaData getMetaData() throws SQLException {
+    public DatabaseMetaData getMetaData() {
         return metadata;
     }
 
     @Override
-    public PreparedStatement prepareStatement(String soql) throws SQLException {
+    public PreparedStatement prepareStatement(String soql) {
         return new ForcePreparedStatement(this, soql);
     }
 
@@ -57,20 +58,19 @@ public class ForceConnection implements Connection {
     private PartnerConnection getConnectionBySessionId() throws ConnectionException {
         ConnectorConfig partnerConfig = new ConnectorConfig();
         partnerConfig.setSessionId(info.getSessionId());
-        if (info.getLoginDomain() != null) {
-            partnerConfig.setServiceEndpoint(ForceService.getPartnerUrl(info.getSessionId(), info.getLoginDomain(), info.getApiVersion()));
+
+        if (info.getSandbox() != null) {
+            partnerConfig.setServiceEndpoint(ForceService.getPartnerUrl(info.getSessionId(), info.getSandbox(), info.getApiVersion()));
             return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
         }
 
-        info.setLoginDomain(DEFAULT_LOGIN_DOMAIN);
         try {
-            partnerConfig.setServiceEndpoint(ForceService.getPartnerUrl(info.getSessionId(), info.getLoginDomain(), info.getApiVersion()));
-            return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
+            partnerConfig.setServiceEndpoint(ForceService.getPartnerUrl(info.getSessionId(), false, info.getApiVersion()));
+            return Connector.newConnection(partnerConfig);
         } catch (RuntimeException re) {
             try {
-                info.setLoginDomain(SANDBOX_LOGIN_DOMAIN);
-                partnerConfig.setServiceEndpoint(ForceService.getPartnerUrl(info.getSessionId(), info.getLoginDomain(), info.getApiVersion()));
-                return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
+                partnerConfig.setServiceEndpoint(ForceService.getPartnerUrl(info.getSessionId(), true, info.getApiVersion()));
+                return Connector.newConnection(partnerConfig);
             } catch (RuntimeException r) {
                 throw new ConnectionException(r.getMessage());
             }
@@ -83,17 +83,17 @@ public class ForceConnection implements Connection {
         partnerConfig.setPassword(info.getPassword());
         if (info.getLoginDomain() != null) {
             partnerConfig.setAuthEndpoint(info.getAuthEndpoint());
-            return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
-        } else {
-            try {
-                info.setLoginDomain(DEFAULT_LOGIN_DOMAIN);
-                partnerConfig.setAuthEndpoint(info.getAuthEndpoint());
-                return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
-            } catch (ConnectionException ce) {
-                info.setLoginDomain(SANDBOX_LOGIN_DOMAIN);
-                partnerConfig.setAuthEndpoint(info.getAuthEndpoint());
-                return com.sforce.soap.partner.Connector.newConnection(partnerConfig);
-            }
+            return Connector.newConnection(partnerConfig);
+        }
+
+        try {
+            info.setLoginDomain(DEFAULT_LOGIN_DOMAIN);
+            partnerConfig.setAuthEndpoint(info.getAuthEndpoint());
+            return Connector.newConnection(partnerConfig);
+        } catch (ConnectionException ce) {
+            info.setLoginDomain(SANDBOX_LOGIN_DOMAIN);
+            partnerConfig.setAuthEndpoint(info.getAuthEndpoint());
+            return Connector.newConnection(partnerConfig);
         }
     }
 
@@ -107,19 +107,19 @@ public class ForceConnection implements Connection {
     }
 
     @Override
-    public <T> T unwrap(Class<T> iface) throws SQLException {
+    public <T> T unwrap(Class<T> iface) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean isWrapperFor(Class<?> iface) throws SQLException {
+    public boolean isWrapperFor(Class<?> iface) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public Statement createStatement() throws SQLException {
+    public Statement createStatement() {
         Logger.getLogger("SF JDBC driver")
                 .info(new Object() {
                 }.getClass().getEnclosingMethod().getName());
@@ -127,21 +127,21 @@ public class ForceConnection implements Connection {
     }
 
     @Override
-    public CallableStatement prepareCall(String sql) throws SQLException {
+    public CallableStatement prepareCall(String sql) {
         Logger.getLogger("SF JDBC driver").info(new Object() {
         }.getClass().getEnclosingMethod().getName());
         return null;
     }
 
     @Override
-    public String nativeSQL(String sql) throws SQLException {
+    public String nativeSQL(String sql) {
         Logger.getLogger("SF JDBC driver").info(new Object() {
         }.getClass().getEnclosingMethod().getName());
         return null;
     }
 
     @Override
-    public void setAutoCommit(boolean autoCommit) throws SQLException {
+    public void setAutoCommit(boolean autoCommit) {
         // TODO Auto-generated method stub
 
     }

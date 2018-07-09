@@ -1,6 +1,6 @@
 package com.ascendix.jdbc.salesforce.oauth;
 
-public class ForceClientException extends Exception {
+public class ForceClientException extends RuntimeException {
 
     public ForceClientException(String message) {
         super(message);

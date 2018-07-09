@@ -3,6 +3,7 @@ package com.ascendix.jdbc.salesforce;
 import com.ascendix.jdbc.salesforce.connection.ForceConnection;
 import com.ascendix.jdbc.salesforce.connection.ForceConnectionInfo;
 import com.sforce.ws.ConnectionException;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -19,9 +20,12 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
+@Slf4j
 public class ForceDriver implements Driver {
 
     private static final String ACCEPTABLE_URL = "jdbc:ascendix:salesforce";
+    private static final Pattern URL_PATTERN = Pattern.compile("\\A" + ACCEPTABLE_URL + "://(.*)");
     private static final String DEFAULT_API_VERSION = "39.0";
     public static final String DEFAULT_LOGIN_DOMAIN = "login.salesforce.com";
     public static final String SANDBOX_LOGIN_DOMAIN = "test.salesforce.com";
@@ -36,17 +40,17 @@ public class ForceDriver implements Driver {
 
     @Override
     public Connection connect(String url, Properties properties) throws SQLException {
+        if (!acceptsURL(url)) {
+            throw new SQLException("Unknown URL format \"" + url + "\"");
+        }
         try {
-            if (!acceptsURL(url)) {
-                throw new SQLException("Unknown URL format \"" + url + "\"");
-            }
             Properties connStringProps = getConnStringProperties(url);
             properties.putAll(connStringProps);
             ForceConnectionInfo info = new ForceConnectionInfo();
             info.setUserName(properties.getProperty("user"));
             info.setPassword(properties.getProperty("password"));
             info.setSessionId(properties.getProperty("sessionId"));
-            info.setLoginDomain(properties.getProperty("loginDomain"));
+            info.setSandbox(resolveSandboxProperty(properties));
             info.setApiVersion(DEFAULT_API_VERSION);
             return new ForceConnection(info);
         } catch (ConnectionException | IOException e) {
@@ -54,10 +58,22 @@ public class ForceDriver implements Driver {
         }
     }
 
+    private static Boolean resolveSandboxProperty(Properties properties) {
+        String sandbox = properties.getProperty("sandbox");
+        if (sandbox != null) {
+            return Boolean.valueOf(sandbox);
+        }
+        String loginDomain = properties.getProperty("loginDomain");
+        if (loginDomain != null) {
+            return loginDomain.contains("test");
+        }
+        return null;
+    }
+
 
     protected Properties getConnStringProperties(String url) throws IOException {
         Properties result = new Properties();
-        Matcher matcher = Pattern.compile("\\A" + ACCEPTABLE_URL + "://(.*)").matcher(url);
+        Matcher matcher = URL_PATTERN.matcher(url);
         if (matcher.matches()) {
             String urlProperties = matcher.group(1);
             urlProperties = urlProperties.replaceAll(";", "\n");
@@ -69,12 +85,12 @@ public class ForceDriver implements Driver {
     }
 
     @Override
-    public boolean acceptsURL(String url) throws SQLException {
+    public boolean acceptsURL(String url) {
         return url != null && url.startsWith(ACCEPTABLE_URL);
     }
 
     @Override
-    public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) throws SQLException {
+    public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) {
         return new DriverPropertyInfo[]{};
     }
 
@@ -95,7 +111,7 @@ public class ForceDriver implements Driver {
 
     @Override
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
-        return null;
+        throw new SQLFeatureNotSupportedException();
     }
 
 }

@@ -62,7 +62,7 @@
         <dependency>
             <groupId>org.mapdb</groupId>
             <artifactId>mapdb</artifactId>
-            <version>3.0.7</version>
+            <version>3.0.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -197,4 +197,13 @@
 
         </profile>
     </profiles>
+
+    <distributionManagement>
+        <repository>
+            <id>com.ascendix.maven.local</id>
+            <name>Local Repo Deployment</name>
+            <url>file://${basedir}/../mvnrepo</url>
+            <layout>default</layout>
+        </repository>
+    </distributionManagement>
 </project>

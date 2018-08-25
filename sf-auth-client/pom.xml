@@ -45,7 +45,6 @@
             <artifactId>google-http-client-jackson2</artifactId>
             <version>${google-oauth-client.version}</version>
         </dependency>
-
     </dependencies>
 
 

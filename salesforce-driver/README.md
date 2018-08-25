@@ -91,7 +91,7 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
   
     ![image](/docs/birt/Data%20source%20-%20property%20binding.png)
   
-     See how it's done in [Salesforce JDBC report sample](docs/birt/Salesforce%20JDBC%20sample.rptdesign)
+     See how it's done in [Salesforce JDBC report sample](docs/birt/Salesforce JDBC sample.rptdesign)
   
 
 

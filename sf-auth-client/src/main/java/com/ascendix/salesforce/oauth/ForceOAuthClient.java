@@ -13,7 +13,7 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.ExponentialBackOff;
-
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 
@@ -21,37 +21,36 @@ public class ForceOAuthClient {
 
     private static final String LOGIN_URL = "https://login.salesforce.com/services/oauth2/userinfo";
     private static final String TEST_LOGIN_URL = "https://test.salesforce.com/services/oauth2/userinfo";
+    private static final String API_VERSION = "43";
 
-    private static final String BAD_TOKEN_SF_ERROR_CODE = "Bad_OAuth_Token";
+    private static final String BAD_TOKEN_SF_ERROR_CODE = "INVALID_SESSION_ID";
 
     private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
     private static final JsonFactory JSON_FACTORY = new JacksonFactory();
 
     private final int connectTimeout;
     private final int readTimeout;
-    private final String loginUrl;
+    private String loginUrl;
 
-    public ForceOAuthClient(int connectTimeoutSec, int readTimeoutSec, boolean sandbox) {
+    public ForceOAuthClient(int connectTimeoutSec, int readTimeoutSec) {
         this.connectTimeout = connectTimeoutSec * 1000;
         this.readTimeout = readTimeoutSec * 1000;
+    }
+
+    private void initLoginUrl(boolean sandbox) {
         this.loginUrl = sandbox ? TEST_LOGIN_URL : LOGIN_URL;
     }
 
-    public ForceUserInfo getUserInfo(String accessToken) throws BadOAuthTokenException, ForceClientException {
-        Credential credential = new Credential(BearerToken.authorizationHeaderAccessMethod())
-                .setAccessToken(accessToken);
-
-        HttpRequestFactory requestFactory = HTTP_TRANSPORT.createRequestFactory(
-                request -> {
-                    request.setConnectTimeout(connectTimeout);
-                    request.setReadTimeout(readTimeout);
-                    request.setParser(JSON_FACTORY.createJsonObjectParser());
-                    request.setInterceptor(credential);
-                    request.setUnsuccessfulResponseHandler(buildUnsuccessfulResponseHandler());
-                });
+    public ForceUserInfo getUserInfo(String accessToken, boolean sandbox) throws BadOAuthTokenException, ForceClientException {
+        initLoginUrl(sandbox);
+        HttpRequestFactory requestFactory = buildHttpRequestFactory(accessToken);
         try {
             HttpResponse result = requestFactory.buildGetRequest(new GenericUrl(this.loginUrl)).execute();
-            return result.parseAs(ForceUserInfo.class);
+            ForceUserInfo forceUserInfo = result.parseAs(ForceUserInfo.class);
+            extractPartnerUrl(forceUserInfo);
+            extractInstance(forceUserInfo);
+
+            return forceUserInfo;
         } catch (HttpResponseException e) {
             if (isBadTokenError(e)) {
                 throw new BadOAuthTokenException("Bad OAuth Token: " + accessToken);
@@ -62,8 +61,31 @@ public class ForceOAuthClient {
         }
     }
 
+    private HttpRequestFactory buildHttpRequestFactory(String accessToken) {
+        Credential credential = new Credential(BearerToken.authorizationHeaderAccessMethod())
+                .setAccessToken(accessToken);
+
+        return HTTP_TRANSPORT.createRequestFactory(
+                request -> {
+                    request.setConnectTimeout(connectTimeout);
+                    request.setReadTimeout(readTimeout);
+                    request.setParser(JSON_FACTORY.createJsonObjectParser());
+                    request.setInterceptor(credential);
+                    request.setUnsuccessfulResponseHandler(buildUnsuccessfulResponseHandler());
+                });
+    }
+
+
+
+    private void extractPartnerUrl(ForceUserInfo userInfo) {
+        if (userInfo.getUrls() == null || !userInfo.getUrls().containsKey("partner")) {
+            throw new IllegalStateException("User info doesn't contain partner URL: " + userInfo.getUrls());
+        }
+        userInfo.setPartnerUrl(userInfo.getUrls().get("partner").replace("{version}", API_VERSION));
+    }
+
     private boolean isBadTokenError(HttpResponseException e) {
-        return e.getStatusCode() == HttpStatusCodes.STATUS_CODE_FORBIDDEN && e.getContent().equals(BAD_TOKEN_SF_ERROR_CODE);
+        return e.getStatusCode() == HttpStatusCodes.STATUS_CODE_SERVER_ERROR && e.getContent().contains(BAD_TOKEN_SF_ERROR_CODE);
     }
 
     private static boolean isInternalError(HttpResponse response) {
@@ -81,6 +103,20 @@ public class ForceOAuthClient {
                 .build();
         HttpBackOffUnsuccessfulResponseHandler.BackOffRequired required = ForceOAuthClient::isInternalError;
         return new HttpBackOffUnsuccessfulResponseHandler(backOff).setBackOffRequired(required);
+    }
+
+    private void extractInstance(ForceUserInfo userInfo) {
+        String profileUrl = userInfo.getPartnerUrl();
+        if (StringUtils.isBlank(profileUrl)) {
+            return;
+        }
+        profileUrl = profileUrl.replace("https://", "");
+        try {
+            String instance = StringUtils.split(profileUrl, '.')[0];
+            userInfo.setInstance(instance);
+        } catch (Exception e) {
+//            log.error("Failed to parse instance name from profile: " + profileUrl, e);
+        }
     }
 
 }

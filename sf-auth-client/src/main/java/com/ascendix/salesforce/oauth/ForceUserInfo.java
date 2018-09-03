@@ -16,12 +16,12 @@ public class ForceUserInfo {
     private String organizationId;
     @Key("preferred_username")
     private String preferredUsername;
-    @Key("profile")
-    private String profileUrl;
     @Key("zoneinfo")
     private String timeZone;
     @Key("locale")
     private String locale;
+    private String instance;
+    private String partnerUrl;
     @Key("urls")
     private Map<String, String> urls;
 }

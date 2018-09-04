@@ -108,11 +108,6 @@
                 <version>${commons-collections4.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-lang3</artifactId>
-                <version>commons-lang3.version</version>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.directory.studio</groupId>
                 <artifactId>org.apache.commons.io</artifactId>
                 <version>${org.apache.commons.io.version}</version>

@@ -1,0 +1,13 @@
+<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <env:Header>
+        <SessionHeader xmlns="urn:partner.soap.sforce.com">
+            <sessionId>{sessionId}</sessionId>
+        </SessionHeader>
+    </env:Header>
+    <env:Body>
+        <query xmlns="urn:partner.soap.sforce.com">
+            <queryString>Select Id From User limit 1</queryString>
+        </query>
+    </env:Body>
+</env:Envelope>

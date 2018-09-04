@@ -37,7 +37,7 @@ Download the driver [here](https://github.com/ascendix/mvnrepo/raw/master/com/as
 ## How to connect
 
 ### Driver class name
-ForceDriver 
+com.ascendix.jdbc.salesforce.ForceDriver 
 
 ### JDBC URL format
 ```

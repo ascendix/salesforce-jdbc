@@ -1,7 +1,5 @@
 package com.ascendix.jdbc.salesforce.statement;
 
-import com.ascendix.jdbc.salesforce.statement.FieldDef;
-import com.ascendix.jdbc.salesforce.statement.SoqlQueryAnalyzer;
 import com.sforce.soap.partner.DescribeSObjectResult;
 import com.thoughtworks.xstream.XStream;
 import org.junit.Test;

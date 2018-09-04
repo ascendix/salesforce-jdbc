@@ -16,6 +16,7 @@ import com.google.api.client.util.ExponentialBackOff;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 public class ForceSoapValidator {
     private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
@@ -29,9 +30,10 @@ public class ForceSoapValidator {
 
     public boolean validateForceToken(String partnerUrl, String accessToken) {
         HttpRequestFactory requestFactory = buildHttpRequestFactory();
-        try {
-            ClassLoader classLoader = getClass().getClassLoader();
-            String requestBody = IOUtils.toString(classLoader.getResourceAsStream("forceSoapBody"));
+        ClassLoader classLoader = getClass().getClassLoader();
+        try (InputStream is = classLoader.getResourceAsStream("forceSoapBody")) {
+
+            String requestBody = IOUtils.toString(is);
 
             HttpRequest request = requestFactory.buildPostRequest(
                     new GenericUrl(partnerUrl),

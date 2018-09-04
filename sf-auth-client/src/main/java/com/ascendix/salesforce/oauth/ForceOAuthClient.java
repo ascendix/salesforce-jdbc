@@ -117,7 +117,7 @@ public class ForceOAuthClient {
             String instance = StringUtils.split(profileUrl, '.')[0];
             userInfo.setInstance(instance);
         } catch (Exception e) {
-            //log.error("Failed to parse instance name from profile: {}",profileUrl, e);
+            log.error("Failed to parse instance name from profile: {}", profileUrl, e);
         }
     }
 

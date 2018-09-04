@@ -92,7 +92,7 @@
                     <name>disabledContentBidiFormatStr</name>
                 </ex-property>
             </list-property>
-            <property name="odaDriverClass">ForceDriver</property>
+            <property name="odaDriverClass">com.ascendix.jdbc.salesforce.ForceDriver</property>
             <property name="odaURL">jdbc:ascendix:salesforce://</property>
         </oda-data-source>
     </data-sources>

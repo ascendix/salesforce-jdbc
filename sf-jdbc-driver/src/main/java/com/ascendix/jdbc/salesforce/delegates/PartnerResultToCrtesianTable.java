@@ -50,7 +50,7 @@ public class PartnerResultToCrtesianTable {
 
     }
 
-    private List expandRow(List row, Object nestedItem, int position) {
+    private static List expandRow(List row, Object nestedItem, int position) {
         List nestedItemsToInsert = nestedItem instanceof List ? (List) nestedItem : Arrays.asList(nestedItem);
         List newRow = new ArrayList<>(row.subList(0, position));
         newRow.addAll(nestedItemsToInsert);

@@ -5,6 +5,9 @@ import com.sforce.soap.partner.Connector;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
+import lombok.experimental.UtilityClass;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
@@ -12,20 +15,25 @@ import org.mapdb.Serializer;
 
 import java.util.concurrent.TimeUnit;
 
+@UtilityClass
+@Slf4j
 public class ForceService {
 
     private static final String DEFAULT_LOGIN_DOMAIN = "login.salesforce.com";
     private static final String SANDBOX_LOGIN_DOMAIN = "test.salesforce.com";
-    private static final int TIMEOUT = 300000;
+    private static final long CONNECTION_TIMEOUT = TimeUnit.SECONDS.toMillis(10);
+    private static final long READ_TIMEOUT = TimeUnit.SECONDS.toMillis(30);
     private static final String DEFAULT_API_VERSION = "43.0";
+    public static final int EXPIRE_AFTER_CREATE = 60;
+    public static final int EXPIRE_STORE_SIZE = 16;
 
 
     private static final DB cacheDb = DBMaker.tempFileDB().closeOnJvmShutdown().make();
 
     private static HTreeMap<String, String> partnerUrlCache = cacheDb
             .hashMap("PartnerUrlCache", Serializer.STRING, Serializer.STRING)
-            .expireAfterCreate(60, TimeUnit.MINUTES)
-            .expireStoreSize(16 * 1024 * 1024 * 1024)
+            .expireAfterCreate(EXPIRE_AFTER_CREATE, TimeUnit.MINUTES)
+            .expireStoreSize(EXPIRE_STORE_SIZE * FileUtils.ONE_MB)
             .create();
 
 
@@ -34,7 +42,7 @@ public class ForceService {
     }
 
     private static String getPartnerUrlFromUserInfo(String accessToken, boolean sandbox) {
-        return new ForceOAuthClient(TIMEOUT, TIMEOUT).getUserInfo(accessToken, sandbox).getPartnerUrl();
+        return new ForceOAuthClient(CONNECTION_TIMEOUT, READ_TIMEOUT).getUserInfo(accessToken, sandbox).getPartnerUrl();
     }
 
     public static PartnerConnection createPartnerConnection(ForceConnectionInfo info) throws ConnectionException {
@@ -63,7 +71,8 @@ public class ForceService {
         }
     }
 
-    private static PartnerConnection createConnectionByUserCredential(ForceConnectionInfo info) throws ConnectionException {
+    private static PartnerConnection createConnectionByUserCredential(ForceConnectionInfo info)
+            throws ConnectionException {
         ConnectorConfig partnerConfig = new ConnectorConfig();
         partnerConfig.setUsername(info.getUserName());
         partnerConfig.setPassword(info.getPassword());
@@ -82,6 +91,11 @@ public class ForceService {
     }
 
     private static String buildAuthEndpoint(boolean sandbox) {
-        return String.format("https://%s/services/Soap/u/%s", sandbox ? SANDBOX_LOGIN_DOMAIN : DEFAULT_LOGIN_DOMAIN, DEFAULT_API_VERSION);
+        if (sandbox) {
+            return String.format("https://%s/services/Soap/u/%s", SANDBOX_LOGIN_DOMAIN, DEFAULT_API_VERSION);
+        } else {
+            return String.format("https://%s/services/Soap/u/%s", DEFAULT_LOGIN_DOMAIN, DEFAULT_API_VERSION);
+        }
+
     }
 }

@@ -2,7 +2,7 @@ package com.ascendix.jdbc.salesforce.delegates;
 
 public class ForceResultField {
 
-    public final static String NESTED_RESULT_SET_FIELD_TYPE = "nestedResultSet";
+    public static final String NESTED_RESULT_SET_FIELD_TYPE = "nestedResultSet";
 
     private String entityType;
     private String name;

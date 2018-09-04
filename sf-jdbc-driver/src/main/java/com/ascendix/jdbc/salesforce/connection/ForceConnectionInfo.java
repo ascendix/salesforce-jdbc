@@ -1,6 +1,5 @@
 package com.ascendix.jdbc.salesforce.connection;
 
-
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

@@ -13,10 +13,12 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.ExponentialBackOff;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 
+@Slf4j
 public class ForceOAuthClient {
 
     private static final String LOGIN_URL = "https://login.salesforce.com/services/oauth2/userinfo";
@@ -28,20 +30,20 @@ public class ForceOAuthClient {
     private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
     private static final JsonFactory JSON_FACTORY = new JacksonFactory();
 
-    private final int connectTimeout;
-    private final int readTimeout;
+    private final long connectTimeout;
+    private final long readTimeout;
     private String loginUrl;
 
-    public ForceOAuthClient(int connectTimeoutSec, int readTimeoutSec) {
-        this.connectTimeout = connectTimeoutSec * 1000;
-        this.readTimeout = readTimeoutSec * 1000;
+    public ForceOAuthClient(long connectTimeoutSec, long readTimeoutSec) {
+        this.connectTimeout = connectTimeoutSec;
+        this.readTimeout = readTimeoutSec;
     }
 
     private void initLoginUrl(boolean sandbox) {
         this.loginUrl = sandbox ? TEST_LOGIN_URL : LOGIN_URL;
     }
 
-    public ForceUserInfo getUserInfo(String accessToken, boolean sandbox) throws BadOAuthTokenException, ForceClientException {
+    public ForceUserInfo getUserInfo(String accessToken, boolean sandbox) {
         initLoginUrl(sandbox);
         HttpRequestFactory requestFactory = buildHttpRequestFactory(accessToken);
         try {
@@ -67,8 +69,8 @@ public class ForceOAuthClient {
 
         return HTTP_TRANSPORT.createRequestFactory(
                 request -> {
-                    request.setConnectTimeout(connectTimeout);
-                    request.setReadTimeout(readTimeout);
+                    request.setConnectTimeout(Math.toIntExact(connectTimeout));
+                    request.setReadTimeout(Math.toIntExact(readTimeout));
                     request.setParser(JSON_FACTORY.createJsonObjectParser());
                     request.setInterceptor(credential);
                     request.setUnsuccessfulResponseHandler(buildUnsuccessfulResponseHandler());
@@ -76,16 +78,16 @@ public class ForceOAuthClient {
     }
 
 
-
-    private void extractPartnerUrl(ForceUserInfo userInfo) {
+    private static void extractPartnerUrl(ForceUserInfo userInfo) {
         if (userInfo.getUrls() == null || !userInfo.getUrls().containsKey("partner")) {
             throw new IllegalStateException("User info doesn't contain partner URL: " + userInfo.getUrls());
         }
         userInfo.setPartnerUrl(userInfo.getUrls().get("partner").replace("{version}", API_VERSION));
     }
 
-    private boolean isBadTokenError(HttpResponseException e) {
-        return e.getStatusCode() == HttpStatusCodes.STATUS_CODE_SERVER_ERROR && e.getContent().contains(BAD_TOKEN_SF_ERROR_CODE);
+    private static boolean isBadTokenError(HttpResponseException e) {
+        return e.getStatusCode() == HttpStatusCodes.STATUS_CODE_SERVER_ERROR &&
+                e.getContent().contains(BAD_TOKEN_SF_ERROR_CODE);
     }
 
     private static boolean isInternalError(HttpResponse response) {
@@ -105,7 +107,7 @@ public class ForceOAuthClient {
         return new HttpBackOffUnsuccessfulResponseHandler(backOff).setBackOffRequired(required);
     }
 
-    private void extractInstance(ForceUserInfo userInfo) {
+    private static void extractInstance(ForceUserInfo userInfo) {
         String profileUrl = userInfo.getPartnerUrl();
         if (StringUtils.isBlank(profileUrl)) {
             return;
@@ -115,7 +117,7 @@ public class ForceOAuthClient {
             String instance = StringUtils.split(profileUrl, '.')[0];
             userInfo.setInstance(instance);
         } catch (Exception e) {
-//            log.error("Failed to parse instance name from profile: " + profileUrl, e);
+            //log.error("Failed to parse instance name from profile: {}",profileUrl, e);
         }
     }
 

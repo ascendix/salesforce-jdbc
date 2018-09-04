@@ -223,4 +223,10 @@
             </plugin>
         </plugins>
     </build>
+    <distributionManagement>
+        <repository>
+            <id>YOU_REP_ID</id>
+            <url>YOU_REP_URL</url>
+        </repository>
+    </distributionManagement>
 </project>

@@ -44,6 +44,12 @@
         <repository>
             <id>acx.com-maven-repo</id>
             <url>default_url</url>
+			  <releases>
+				<enabled>true</enabled>
+			  </releases>
+			  <snapshots>
+				<enabled>false</enabled>
+			  </snapshots>
         </repository>
     </distributionManagement>
     <dependencyManagement>

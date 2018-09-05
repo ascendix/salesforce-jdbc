@@ -40,7 +40,12 @@
         <xstream.version>1.2.2</xstream.version>
         <org.apache.commons.io.version>2.4</org.apache.commons.io.version>
     </properties>
-
+    <distributionManagement>
+        <repository>
+            <id>acx.com-maven-repo</id>
+            <url>default_url</url>
+        </repository>
+    </distributionManagement>
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -223,10 +228,4 @@
             </plugin>
         </plugins>
     </build>
-    <distributionManagement>
-        <repository>
-            <id>internal_repo_id</id>
-            <url></url>
-        </repository>
-    </distributionManagement>
 </project>

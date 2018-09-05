@@ -225,8 +225,8 @@
     </build>
     <distributionManagement>
         <repository>
-            <id>YOU_REP_ID</id>
-            <url>YOU_REP_URL</url>
+            <id>internal_repo_id</id>
+            <url></url>
         </repository>
     </distributionManagement>
 </project>

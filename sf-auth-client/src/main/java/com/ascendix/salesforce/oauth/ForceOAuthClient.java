@@ -34,9 +34,9 @@ public class ForceOAuthClient {
     private final long readTimeout;
     private String loginUrl;
 
-    public ForceOAuthClient(long connectTimeoutSec, long readTimeoutSec) {
-        this.connectTimeout = connectTimeoutSec;
-        this.readTimeout = readTimeoutSec;
+    public ForceOAuthClient(long connectTimeout, long readTimeout) {
+        this.connectTimeout = connectTimeout;
+        this.readTimeout = readTimeout;
     }
 
     private void initLoginUrl(boolean sandbox) {

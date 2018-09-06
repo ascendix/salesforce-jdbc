@@ -23,9 +23,9 @@ public class ForceSoapValidator {
     private final int connectTimeout;
     private final int readTimeout;
 
-    public ForceSoapValidator(int connectTimeoutSec, int readTimeoutSec) {
-        this.connectTimeout = connectTimeoutSec * 1000;
-        this.readTimeout = readTimeoutSec * 1000;
+    public ForceSoapValidator(int connectTimeout, int readTimeout) {
+        this.connectTimeout = connectTimeout;
+        this.readTimeout = readTimeout;
     }
 
     public boolean validateForceToken(String partnerUrl, String accessToken) {

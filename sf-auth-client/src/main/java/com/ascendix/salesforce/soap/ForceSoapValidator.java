@@ -20,10 +20,10 @@ import java.io.InputStream;
 
 public class ForceSoapValidator {
     private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
-    private final int connectTimeout;
-    private final int readTimeout;
+    private final long connectTimeout;
+    private final long readTimeout;
 
-    public ForceSoapValidator(int connectTimeout, int readTimeout) {
+    public ForceSoapValidator(long connectTimeout, long readTimeout) {
         this.connectTimeout = connectTimeout;
         this.readTimeout = readTimeout;
     }
@@ -55,8 +55,8 @@ public class ForceSoapValidator {
     private HttpRequestFactory buildHttpRequestFactory() {
         return HTTP_TRANSPORT.createRequestFactory(
                 request -> {
-                    request.setConnectTimeout(connectTimeout);
-                    request.setReadTimeout(readTimeout);
+                    request.setConnectTimeout(Math.toIntExact(connectTimeout));
+                    request.setReadTimeout(Math.toIntExact(readTimeout));
                     request.setUnsuccessfulResponseHandler(buildUnsuccessfulResponseHandler());
                 });
     }

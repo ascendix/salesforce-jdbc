@@ -23,6 +23,9 @@ public class ForceSoapValidator {
     private final long connectTimeout;
     private final long readTimeout;
 
+    private static final String SOAP_FAULT = "<soapenv:Fault>";
+    private static final String BAD_TOKEN_SF_ERROR_CODE = "INVALID_SESSION_ID";
+
     public ForceSoapValidator(long connectTimeout, long readTimeout) {
         this.connectTimeout = connectTimeout;
         this.readTimeout = readTimeout;
@@ -46,6 +49,10 @@ public class ForceSoapValidator {
             HttpResponse result = request.execute();
             return result.getStatusCode() == HttpStatusCodes.STATUS_CODE_OK;
         } catch (HttpResponseException e) {
+            if (e.getStatusCode() == HttpStatusCodes.STATUS_CODE_SERVER_ERROR &&
+                    e.getContent().contains(SOAP_FAULT) && e.getContent().contains(BAD_TOKEN_SF_ERROR_CODE))
+                return false;
+
             throw new ForceClientException("Response error: " + e.getStatusCode() + " " + e.getContent());
         } catch (IOException e) {
             throw new ForceClientException("IO error: " + e.getMessage(), e);

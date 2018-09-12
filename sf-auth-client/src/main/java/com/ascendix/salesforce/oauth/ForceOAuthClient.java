@@ -25,7 +25,8 @@ public class ForceOAuthClient {
     private static final String TEST_LOGIN_URL = "https://test.salesforce.com/services/oauth2/userinfo";
     private static final String API_VERSION = "43";
 
-    private static final String BAD_TOKEN_SF_ERROR_CODE = "INVALID_SESSION_ID";
+    private static final String BAD_TOKEN_SF_ERROR_CODE = "Bad_OAuth_Token";
+    private static final String MISSING_TOKEN_SF_ERROR_CODE = "Missing_OAuth_Token";
 
     private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
     private static final JsonFactory JSON_FACTORY = new JacksonFactory();
@@ -86,8 +87,8 @@ public class ForceOAuthClient {
     }
 
     private static boolean isBadTokenError(HttpResponseException e) {
-        return e.getStatusCode() == HttpStatusCodes.STATUS_CODE_SERVER_ERROR &&
-                e.getContent().contains(BAD_TOKEN_SF_ERROR_CODE);
+        return e.getStatusCode() == HttpStatusCodes.STATUS_CODE_FORBIDDEN &&
+                e.getContent().equals(BAD_TOKEN_SF_ERROR_CODE) || e.getContent().equals(MISSING_TOKEN_SF_ERROR_CODE);
     }
 
     private static boolean isInternalError(HttpResponse response) {

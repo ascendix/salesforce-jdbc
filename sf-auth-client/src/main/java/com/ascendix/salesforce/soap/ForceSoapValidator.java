@@ -50,8 +50,9 @@ public class ForceSoapValidator {
             return result.getStatusCode() == HttpStatusCodes.STATUS_CODE_OK;
         } catch (HttpResponseException e) {
             if (e.getStatusCode() == HttpStatusCodes.STATUS_CODE_SERVER_ERROR &&
-                    e.getContent().contains(SOAP_FAULT) && e.getContent().contains(BAD_TOKEN_SF_ERROR_CODE))
+                    e.getContent().contains(SOAP_FAULT) && e.getContent().contains(BAD_TOKEN_SF_ERROR_CODE)) {
                 return false;
+            }
 
             throw new ForceClientException("Response error: " + e.getStatusCode() + " " + e.getContent());
         } catch (IOException e) {

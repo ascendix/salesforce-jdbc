@@ -25,8 +25,7 @@ public class ForceOAuthClient {
     private static final String TEST_LOGIN_URL = "https://test.salesforce.com/services/oauth2/userinfo";
     private static final String API_VERSION = "43";
 
-    private static final String BAD_TOKEN_SF_ERROR_CODE = "Bad_OAuth_Token";
-    private static final String MISSING_TOKEN_SF_ERROR_CODE = "Missing_OAuth_Token";
+    private static final String INTERNAL_SERVER_ERROR_SF_ERROR_CODE = "Internal Error";
 
     private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
     private static final JsonFactory JSON_FACTORY = new JacksonFactory();
@@ -87,12 +86,17 @@ public class ForceOAuthClient {
     }
 
     private static boolean isBadTokenError(HttpResponseException e) {
-        return e.getStatusCode() == HttpStatusCodes.STATUS_CODE_FORBIDDEN &&
-                e.getContent().equals(BAD_TOKEN_SF_ERROR_CODE) || e.getContent().equals(MISSING_TOKEN_SF_ERROR_CODE);
+        return e.getStatusCode() == HttpStatusCodes.STATUS_CODE_FORBIDDEN;
     }
 
     private static boolean isInternalError(HttpResponse response) {
-        return response.getStatusCode() / 100 == 5 || response.getStatusCode() == HttpStatusCodes.STATUS_CODE_NOT_FOUND;
+        try {
+            return response.getStatusCode() / 100 == 5 ||
+                    (response.getStatusCode() == HttpStatusCodes.STATUS_CODE_NOT_FOUND
+                            && response.getContent().equals(INTERNAL_SERVER_ERROR_SF_ERROR_CODE));
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     private static HttpBackOffUnsuccessfulResponseHandler buildUnsuccessfulResponseHandler() {

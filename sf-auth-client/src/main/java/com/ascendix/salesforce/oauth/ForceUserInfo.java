@@ -16,6 +16,10 @@ public class ForceUserInfo {
     private String organizationId;
     @Key("preferred_username")
     private String preferredUsername;
+    @Key("nickname")
+    private String nickName;
+    private String name;
+    private String email;
     @Key("zoneinfo")
     private String timeZone;
     @Key("locale")

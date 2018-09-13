@@ -65,19 +65,7 @@ public class ForceSoapValidator {
                 request -> {
                     request.setConnectTimeout(Math.toIntExact(connectTimeout));
                     request.setReadTimeout(Math.toIntExact(readTimeout));
-                    request.setUnsuccessfulResponseHandler(buildUnsuccessfulResponseHandler());
                 });
     }
 
-    private static HttpBackOffUnsuccessfulResponseHandler buildUnsuccessfulResponseHandler() {
-
-        ExponentialBackOff backOff = new ExponentialBackOff.Builder()
-                .setInitialIntervalMillis(500)
-                .setMaxElapsedTimeMillis(30000)
-                .setMaxIntervalMillis(10000)
-                .setMultiplier(1.5)
-                .setRandomizationFactor(0.5)
-                .build();
-        return new HttpBackOffUnsuccessfulResponseHandler(backOff);
-    }
 }

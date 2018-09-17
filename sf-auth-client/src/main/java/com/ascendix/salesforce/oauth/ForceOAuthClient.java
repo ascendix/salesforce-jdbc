@@ -4,6 +4,8 @@ import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpBackOffUnsuccessfulResponseHandler;
+import com.google.api.client.http.HttpIOExceptionHandler;
+import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpResponseException;
@@ -84,7 +86,11 @@ public class ForceOAuthClient {
                     request.setReadTimeout(Math.toIntExact(readTimeout));
                     request.setParser(JSON_FACTORY.createJsonObjectParser());
                     request.setInterceptor(credential);
+                    // Sets the HTTP unsuccessful (non-2XX) response handler or null or none.
                     request.setUnsuccessfulResponseHandler(buildUnsuccessfulResponseHandler());
+                    // Sets the HTTP I/O exception handler or null for none.
+                    request.setIOExceptionHandler(buildIOExceptionHandler());
+                    request.setNumberOfRetries(10);
                 });
     }
 
@@ -108,20 +114,18 @@ public class ForceOAuthClient {
     }
 
     private boolean isInternalError(HttpResponse response) {
-        try {
-            try (InputStream is = response.getContent()) {
-                responseContent = IOUtils.toString(response.getContent(), StandardCharsets.UTF_8); //does not close inputStream
-            }
-            return response.getStatusCode() / 100 == 5 ||
-                    (response.getStatusCode() == HttpStatusCodes.STATUS_CODE_NOT_FOUND
-                            && StringUtils.containsIgnoreCase(responseContent, INTERNAL_SERVER_ERROR_SF_ERROR_CODE));
+        try (InputStream is = response.getContent()) {
+            responseContent = IOUtils.toString(response.getContent(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             return false;
         }
+        return response.getStatusCode() / 100 == 5 ||
+                (response.getStatusCode() == HttpStatusCodes.STATUS_CODE_NOT_FOUND
+                        && StringUtils.containsIgnoreCase(responseContent, INTERNAL_SERVER_ERROR_SF_ERROR_CODE));
+
     }
 
     private HttpBackOffUnsuccessfulResponseHandler buildUnsuccessfulResponseHandler() {
-
         ExponentialBackOff backOff = new ExponentialBackOff.Builder()
                 .setInitialIntervalMillis(500)
                 .setMaxElapsedTimeMillis(30000)
@@ -131,6 +135,18 @@ public class ForceOAuthClient {
                 .build();
         HttpBackOffUnsuccessfulResponseHandler.BackOffRequired required = response -> isInternalError(response);
         return new HttpBackOffUnsuccessfulResponseHandler(backOff).setBackOffRequired(required);
+    }
+
+    private HttpIOExceptionHandler buildIOExceptionHandler() {
+        return new HttpIOExceptionHandler() {
+            @Override
+            public boolean handleIOException(HttpRequest httpRequest, boolean supportsRetry) throws IOException {
+                if (!supportsRetry) {
+                    return false;
+                }
+                return true;
+            }
+        };
     }
 
     private static void extractInstance(ForceUserInfo userInfo) {

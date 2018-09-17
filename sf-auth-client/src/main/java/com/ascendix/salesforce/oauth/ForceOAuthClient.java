@@ -3,9 +3,9 @@ package com.ascendix.salesforce.oauth;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpBackOffIOExceptionHandler;
 import com.google.api.client.http.HttpBackOffUnsuccessfulResponseHandler;
 import com.google.api.client.http.HttpIOExceptionHandler;
-import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpResponseException;
@@ -14,6 +14,7 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.BackOff;
 import com.google.api.client.util.ExponentialBackOff;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -86,9 +87,7 @@ public class ForceOAuthClient {
                     request.setReadTimeout(Math.toIntExact(readTimeout));
                     request.setParser(JSON_FACTORY.createJsonObjectParser());
                     request.setInterceptor(credential);
-                    // Sets the HTTP unsuccessful (non-2XX) response handler or null or none.
                     request.setUnsuccessfulResponseHandler(buildUnsuccessfulResponseHandler());
-                    // Sets the HTTP I/O exception handler or null for none.
                     request.setIOExceptionHandler(buildIOExceptionHandler());
                     request.setNumberOfRetries(10);
                 });
@@ -125,28 +124,23 @@ public class ForceOAuthClient {
 
     }
 
-    private HttpBackOffUnsuccessfulResponseHandler buildUnsuccessfulResponseHandler() {
-        ExponentialBackOff backOff = new ExponentialBackOff.Builder()
+    private BackOff getBackOff() {
+        return new ExponentialBackOff.Builder()
                 .setInitialIntervalMillis(500)
                 .setMaxElapsedTimeMillis(30000)
                 .setMaxIntervalMillis(10000)
                 .setMultiplier(1.5)
                 .setRandomizationFactor(0.5)
                 .build();
+    }
+
+    private HttpBackOffUnsuccessfulResponseHandler buildUnsuccessfulResponseHandler() {
         HttpBackOffUnsuccessfulResponseHandler.BackOffRequired required = response -> isInternalError(response);
-        return new HttpBackOffUnsuccessfulResponseHandler(backOff).setBackOffRequired(required);
+        return new HttpBackOffUnsuccessfulResponseHandler(getBackOff()).setBackOffRequired(required);
     }
 
     private HttpIOExceptionHandler buildIOExceptionHandler() {
-        return new HttpIOExceptionHandler() {
-            @Override
-            public boolean handleIOException(HttpRequest httpRequest, boolean supportsRetry) throws IOException {
-                if (!supportsRetry) {
-                    return false;
-                }
-                return true;
-            }
-        };
+        return new HttpBackOffIOExceptionHandler(getBackOff());
     }
 
     private static void extractInstance(ForceUserInfo userInfo) {

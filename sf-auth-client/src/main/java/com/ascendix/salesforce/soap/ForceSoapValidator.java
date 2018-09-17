@@ -3,7 +3,6 @@ package com.ascendix.salesforce.soap;
 import com.ascendix.salesforce.oauth.ForceClientException;
 import com.google.api.client.http.ByteArrayContent;
 import com.google.api.client.http.GenericUrl;
-import com.google.api.client.http.HttpBackOffUnsuccessfulResponseHandler;
 import com.google.api.client.http.HttpHeaders;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
@@ -12,8 +11,8 @@ import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.HttpStatusCodes;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.util.ExponentialBackOff;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,10 +49,10 @@ public class ForceSoapValidator {
             return result.getStatusCode() == HttpStatusCodes.STATUS_CODE_OK;
         } catch (HttpResponseException e) {
             if (e.getStatusCode() == HttpStatusCodes.STATUS_CODE_SERVER_ERROR &&
-                    e.getContent().contains(SOAP_FAULT) && e.getContent().contains(BAD_TOKEN_SF_ERROR_CODE)) {
+                    StringUtils.containsIgnoreCase(e.getContent(), SOAP_FAULT) &&
+                    StringUtils.containsIgnoreCase(e.getContent(), BAD_TOKEN_SF_ERROR_CODE)) {
                 return false;
             }
-
             throw new ForceClientException("Response error: " + e.getStatusCode() + " " + e.getContent());
         } catch (IOException e) {
             throw new ForceClientException("IO error: " + e.getMessage(), e);

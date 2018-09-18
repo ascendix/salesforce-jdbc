@@ -1,4 +1,11 @@
 language: java
+dist: trusty
 jdk:
 - oraclejdk8
-script: mvn -B clean package
+cache:
+  directories:
+  - ~/.m2
+addons:
+  sonarcloud:
+    organization: "ascendix-github"
+script: mvn -B clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar

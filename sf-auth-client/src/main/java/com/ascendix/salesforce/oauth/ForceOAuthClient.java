@@ -103,20 +103,18 @@ public class ForceOAuthClient {
 
     private boolean isBadTokenError(HttpResponseException e) {
         return ((e.getStatusCode() == HttpStatusCodes.STATUS_CODE_FORBIDDEN)
-                &&
-                StringUtils.equalsAnyIgnoreCase(responseContent, BAD_TOKEN_SF_ERROR_CODE) ||
-                StringUtils.equalsAnyIgnoreCase(responseContent, MISSING_TOKEN_SF_ERROR_CODE) ||
-                StringUtils.equalsAnyIgnoreCase(responseContent, WRONG_ORG_SF_ERROR_CODE))
+                && StringUtils.equalsAnyIgnoreCase(responseContent,
+                BAD_TOKEN_SF_ERROR_CODE, MISSING_TOKEN_SF_ERROR_CODE, WRONG_ORG_SF_ERROR_CODE))
                 ||
                 (e.getStatusCode() == HttpStatusCodes.STATUS_CODE_NOT_FOUND &&
-                        StringUtils.equalsAnyIgnoreCase(responseContent, BAD_ID_SF_ERROR_CODE));
+                        StringUtils.equalsIgnoreCase(responseContent, BAD_ID_SF_ERROR_CODE));
     }
 
     private boolean isInternalError(HttpResponse response) {
         try (InputStream is = response.getContent()) {
             responseContent = IOUtils.toString(response.getContent(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            return false;
+            return true;
         }
         return response.getStatusCode() / 100 == 5 ||
                 (response.getStatusCode() == HttpStatusCodes.STATUS_CODE_NOT_FOUND

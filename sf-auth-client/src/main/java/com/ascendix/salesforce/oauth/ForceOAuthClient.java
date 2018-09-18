@@ -3,7 +3,9 @@ package com.ascendix.salesforce.oauth;
 import com.google.api.client.auth.oauth2.BearerToken;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpBackOffIOExceptionHandler;
 import com.google.api.client.http.HttpBackOffUnsuccessfulResponseHandler;
+import com.google.api.client.http.HttpIOExceptionHandler;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpResponseException;
@@ -12,11 +14,15 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.google.api.client.util.BackOff;
 import com.google.api.client.util.ExponentialBackOff;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 public class ForceOAuthClient {
@@ -25,6 +31,10 @@ public class ForceOAuthClient {
     private static final String TEST_LOGIN_URL = "https://test.salesforce.com/services/oauth2/userinfo";
     private static final String API_VERSION = "43";
 
+    private static final String BAD_TOKEN_SF_ERROR_CODE = "Bad_OAuth_Token";
+    private static final String MISSING_TOKEN_SF_ERROR_CODE = "Missing_OAuth_Token";
+    private static final String WRONG_ORG_SF_ERROR_CODE = "Wrong_Org";
+    private static final String BAD_ID_SF_ERROR_CODE = "Bad_Id";
     private static final String INTERNAL_SERVER_ERROR_SF_ERROR_CODE = "Internal Error";
 
     private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
@@ -33,6 +43,8 @@ public class ForceOAuthClient {
     private final long connectTimeout;
     private final long readTimeout;
     private String loginUrl;
+
+    private String responseContent = StringUtils.EMPTY;
 
     public ForceOAuthClient(long connectTimeout, long readTimeout) {
         this.connectTimeout = connectTimeout;
@@ -60,6 +72,8 @@ public class ForceOAuthClient {
             throw new ForceClientException("Response error: " + e.getStatusCode() + " " + e.getContent());
         } catch (IOException e) {
             throw new ForceClientException("IO error: " + e.getMessage(), e);
+        } finally {
+            responseContent = StringUtils.EMPTY;
         }
     }
 
@@ -74,6 +88,8 @@ public class ForceOAuthClient {
                     request.setParser(JSON_FACTORY.createJsonObjectParser());
                     request.setInterceptor(credential);
                     request.setUnsuccessfulResponseHandler(buildUnsuccessfulResponseHandler());
+                    request.setIOExceptionHandler(buildIOExceptionHandler());
+                    request.setNumberOfRetries(10);
                 });
     }
 
@@ -85,31 +101,44 @@ public class ForceOAuthClient {
         userInfo.setPartnerUrl(userInfo.getUrls().get("partner").replace("{version}", API_VERSION));
     }
 
-    private static boolean isBadTokenError(HttpResponseException e) {
-        return e.getStatusCode() == HttpStatusCodes.STATUS_CODE_FORBIDDEN;
+    private boolean isBadTokenError(HttpResponseException e) {
+        return ((e.getStatusCode() == HttpStatusCodes.STATUS_CODE_FORBIDDEN)
+                && StringUtils.equalsAnyIgnoreCase(responseContent,
+                BAD_TOKEN_SF_ERROR_CODE, MISSING_TOKEN_SF_ERROR_CODE, WRONG_ORG_SF_ERROR_CODE))
+                ||
+                (e.getStatusCode() == HttpStatusCodes.STATUS_CODE_NOT_FOUND &&
+                        StringUtils.equalsIgnoreCase(responseContent, BAD_ID_SF_ERROR_CODE));
     }
 
-    private static boolean isInternalError(HttpResponse response) {
-        try {
-            return response.getStatusCode() / 100 == 5 ||
-                    (response.getStatusCode() == HttpStatusCodes.STATUS_CODE_NOT_FOUND
-                            && response.getContent().equals(INTERNAL_SERVER_ERROR_SF_ERROR_CODE));
+    private boolean isInternalError(HttpResponse response) {
+        try (InputStream is = response.getContent()) {
+            responseContent = IOUtils.toString(response.getContent(), StandardCharsets.UTF_8);
         } catch (IOException e) {
-            return false;
+            return true;
         }
+        return response.getStatusCode() / 100 == 5 ||
+                (response.getStatusCode() == HttpStatusCodes.STATUS_CODE_NOT_FOUND
+                        && StringUtils.containsIgnoreCase(responseContent, INTERNAL_SERVER_ERROR_SF_ERROR_CODE));
+
     }
 
-    private static HttpBackOffUnsuccessfulResponseHandler buildUnsuccessfulResponseHandler() {
-
-        ExponentialBackOff backOff = new ExponentialBackOff.Builder()
+    private BackOff getBackOff() {
+        return new ExponentialBackOff.Builder()
                 .setInitialIntervalMillis(500)
                 .setMaxElapsedTimeMillis(30000)
                 .setMaxIntervalMillis(10000)
                 .setMultiplier(1.5)
                 .setRandomizationFactor(0.5)
                 .build();
-        HttpBackOffUnsuccessfulResponseHandler.BackOffRequired required = ForceOAuthClient::isInternalError;
-        return new HttpBackOffUnsuccessfulResponseHandler(backOff).setBackOffRequired(required);
+    }
+
+    private HttpBackOffUnsuccessfulResponseHandler buildUnsuccessfulResponseHandler() {
+        HttpBackOffUnsuccessfulResponseHandler.BackOffRequired required = response -> isInternalError(response);
+        return new HttpBackOffUnsuccessfulResponseHandler(getBackOff()).setBackOffRequired(required);
+    }
+
+    private HttpIOExceptionHandler buildIOExceptionHandler() {
+        return new HttpBackOffIOExceptionHandler(getBackOff());
     }
 
     private static void extractInstance(ForceUserInfo userInfo) {

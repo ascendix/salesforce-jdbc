@@ -17,12 +17,9 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.client.util.BackOff;
 import com.google.api.client.util.ExponentialBackOff;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 @Slf4j
 public class ForceOAuthClient {
@@ -36,44 +33,43 @@ public class ForceOAuthClient {
     private static final String WRONG_ORG_SF_ERROR_CODE = "Wrong_Org";
     private static final String BAD_ID_SF_ERROR_CODE = "Bad_Id";
     private static final String INTERNAL_SERVER_ERROR_SF_ERROR_CODE = "Internal Error";
+    private static final int MAX_RETRIES = 5;
 
     private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
     private static final JsonFactory JSON_FACTORY = new JacksonFactory();
 
     private final long connectTimeout;
     private final long readTimeout;
-    private String loginUrl;
-
-    private String responseContent = StringUtils.EMPTY;
 
     public ForceOAuthClient(long connectTimeout, long readTimeout) {
         this.connectTimeout = connectTimeout;
         this.readTimeout = readTimeout;
     }
 
-    private void initLoginUrl(boolean sandbox) {
-        this.loginUrl = sandbox ? TEST_LOGIN_URL : LOGIN_URL;
-    }
-
     public ForceUserInfo getUserInfo(String accessToken, boolean sandbox) {
-        initLoginUrl(sandbox);
+        GenericUrl loginUrl = new GenericUrl(sandbox ? TEST_LOGIN_URL : LOGIN_URL);
         HttpRequestFactory requestFactory = buildHttpRequestFactory(accessToken);
-        try {
-            HttpResponse result = requestFactory.buildGetRequest(new GenericUrl(this.loginUrl)).execute();
-            ForceUserInfo forceUserInfo = result.parseAs(ForceUserInfo.class);
-            extractPartnerUrl(forceUserInfo);
-            extractInstance(forceUserInfo);
+        int tryCount = 0;
+        while (true) {
+            try {
+                HttpResponse result = requestFactory.buildGetRequest(loginUrl).execute();
+                ForceUserInfo forceUserInfo = result.parseAs(ForceUserInfo.class);
+                extractPartnerUrl(forceUserInfo);
+                extractInstance(forceUserInfo);
 
-            return forceUserInfo;
-        } catch (HttpResponseException e) {
-            if (isBadTokenError(e)) {
-                throw new BadOAuthTokenException("Bad OAuth Token: " + accessToken);
+                return forceUserInfo;
+            } catch (HttpResponseException e) {
+                if (isForceInternalError(e) && tryCount < MAX_RETRIES) {
+                    tryCount++;
+                    continue; //try one more time
+                }
+                if (isBadTokenError(e)) {
+                    throw new BadOAuthTokenException("Bad OAuth Token: " + accessToken);
+                }
+                throw new ForceClientException("Response error: " + e.getStatusCode() + " " + e.getContent());
+            } catch (IOException e) {
+                throw new ForceClientException("IO error: " + e.getMessage(), e);
             }
-            throw new ForceClientException("Response error: " + e.getStatusCode() + " " + e.getContent());
-        } catch (IOException e) {
-            throw new ForceClientException("IO error: " + e.getMessage(), e);
-        } finally {
-            responseContent = StringUtils.EMPTY;
         }
     }
 
@@ -89,7 +85,7 @@ public class ForceOAuthClient {
                     request.setInterceptor(credential);
                     request.setUnsuccessfulResponseHandler(buildUnsuccessfulResponseHandler());
                     request.setIOExceptionHandler(buildIOExceptionHandler());
-                    request.setNumberOfRetries(10);
+                    request.setNumberOfRetries(MAX_RETRIES);
                 });
     }
 
@@ -103,23 +99,16 @@ public class ForceOAuthClient {
 
     private boolean isBadTokenError(HttpResponseException e) {
         return ((e.getStatusCode() == HttpStatusCodes.STATUS_CODE_FORBIDDEN)
-                && StringUtils.equalsAnyIgnoreCase(responseContent,
+                && StringUtils.equalsAnyIgnoreCase(e.getContent(),
                 BAD_TOKEN_SF_ERROR_CODE, MISSING_TOKEN_SF_ERROR_CODE, WRONG_ORG_SF_ERROR_CODE))
                 ||
                 (e.getStatusCode() == HttpStatusCodes.STATUS_CODE_NOT_FOUND &&
-                        StringUtils.equalsIgnoreCase(responseContent, BAD_ID_SF_ERROR_CODE));
+                        StringUtils.equalsIgnoreCase(e.getContent(), BAD_ID_SF_ERROR_CODE));
     }
 
-    private boolean isInternalError(HttpResponse response) {
-        try (InputStream is = response.getContent()) {
-            responseContent = IOUtils.toString(response.getContent(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            return true;
-        }
-        return response.getStatusCode() / 100 == 5 ||
-                (response.getStatusCode() == HttpStatusCodes.STATUS_CODE_NOT_FOUND
-                        && StringUtils.containsIgnoreCase(responseContent, INTERNAL_SERVER_ERROR_SF_ERROR_CODE));
-
+    private boolean isForceInternalError(HttpResponseException e) {
+        return e.getStatusCode() == HttpStatusCodes.STATUS_CODE_NOT_FOUND &&
+                StringUtils.equalsIgnoreCase(e.getContent(), INTERNAL_SERVER_ERROR_SF_ERROR_CODE);
     }
 
     private BackOff getBackOff() {
@@ -133,8 +122,7 @@ public class ForceOAuthClient {
     }
 
     private HttpBackOffUnsuccessfulResponseHandler buildUnsuccessfulResponseHandler() {
-        HttpBackOffUnsuccessfulResponseHandler.BackOffRequired required = response -> isInternalError(response);
-        return new HttpBackOffUnsuccessfulResponseHandler(getBackOff()).setBackOffRequired(required);
+        return new HttpBackOffUnsuccessfulResponseHandler(getBackOff());
     }
 
     private HttpIOExceptionHandler buildIOExceptionHandler() {

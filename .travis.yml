@@ -1,11 +1,14 @@
 language: java
 dist: trusty
 jdk:
-- oraclejdk8
+  - oraclejdk8
 cache:
   directories:
-  - ~/.m2
+  - ~/.m2/repository
+  - ~/.sonar/cache
 addons:
   sonarcloud:
-    organization: "ascendix-github"
+    organization: "ascendix"
+    token:
+      secure: "OujfBaq2GKABK3q1qVKvXdImbcyMGNOR86a0uch/oK9LfqhSxvoy9yENyltVYpQezeHfhzsky260RT8LyqNhmF/MkZFVpl7cp+CiqW/QSt7W8tH8NmSgt09pF0bqg8YNmM3/DWNKWaN8GbSXVdqliEOUO8ccVNahBNuD396oaig5jRFtV4tZRKx+DlScfqQfZtPZR/lndV5I7QRNHHFELDmWDQfiorO5070X9ppPaqUR1nclfTCVBSDA/MufIKbAMnM0i4vkacf9EiRX3g3sTqs8LxqED5+PGiwfqGgQRLDT3N9WCxOf+40ZrTS15kHISAq1grH4B6FmyBpLKCB/zmluLFcnyNWdrOsiqfqvkjdZwC1iXsfwjeQUfYB1RyqJ4DxoD4OAV/83NLwa5owZTbYkA6oZioJKHBvIC5vffrFqh80IC79vj1bkim0KkjVEJ1zH/nD/Ty5E8am2xSMnTyt4SUAwuybjqG55Gs0MCOjcuf57pDr42IKtwcPvI9YUPAhJovkYOiU8mQPKuFI5+E0JegAnw2t+Cfo7pCLJkhhnXwp8w8EhN6OYcEhzAKKOGs49Eg2mg9LBWxuiCKNAxfLCSVXRWV+b9A6F3oDqQIDCwa0zLBIpikY7RNQZzxzCptzXM10RbSHZokN+36lW5r4jrrzWEn1RxFdS9fWZEPA="
 script: mvn -B clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar

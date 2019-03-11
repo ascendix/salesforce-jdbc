@@ -12,11 +12,11 @@ import com.sforce.soap.partner.QueryResult;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.bind.XmlObject;
 import org.apache.commons.collections4.IteratorUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -138,9 +138,6 @@ public class PartnerService {
         return PartnerResultToCrtesianTable.expand(resultRows, expectedSchema);
     }
 
-    private List<List> removeServiceInfo(Iterator<XmlObject> rows) {
-        return removeServiceInfo(IteratorUtils.toList(rows));
-    }
 
     private List<List> removeServiceInfo(List<XmlObject> rows) {
         return rows.stream()
@@ -154,26 +151,32 @@ public class PartnerService {
                 .filter(this::isDataObjectType)
                 .skip(1) // Removes duplicate Id from SF Partner API response
                 // (https://developer.salesforce.com/forums/?id=906F00000008kciIAA)
-                .map(field -> isNestedResultset(field)
-                        ? removeServiceInfo(field.getChildren())
-                        : toForceResultField(field))
+                .map(field -> processFieldObject(field))
                 .collect(Collectors.toList());
+
     }
 
-    private ForceResultField toForceResultField(XmlObject field) {
-        String fieldType = field.getXmlType() != null ? field.getXmlType().getLocalPart() : null;
-        if ("sObject".equalsIgnoreCase(fieldType)) {
-            List<XmlObject> children = new ArrayList<>();
-            field.getChildren().forEachRemaining(children::add);
-            field = children.get(2);
-        }
+
+    @NotNull
+    private ForceResultField getForceResultField(XmlObject field, String fieldType) {
         String name = field.getName().getLocalPart();
         Object value = field.getValue();
         return new ForceResultField(null, fieldType, name, value);
     }
 
-    private boolean isNestedResultset(XmlObject object) {
-        return object.getXmlType() != null && "QueryResult".equals(object.getXmlType().getLocalPart());
+    private ForceResultField processFieldObject(XmlObject xmlField) {
+        String fieldType = xmlField.getXmlType() != null ? xmlField.getXmlType().getLocalPart() : null;
+        if ("QueryResult".equals(fieldType)) {
+             //removeServiceInfo(IteratorUtils.toList(xmlField.getChildren()));
+            return null;
+        } else if ("sObject".equals(fieldType)) {
+            List children = new ArrayList<>();
+            xmlField.getChildren().forEachRemaining(xmlObject -> children.add(getForceResultField(xmlObject,
+                    fieldType)));
+            return (ForceResultField)children.get(0);
+        } else {
+            return getForceResultField(xmlField, fieldType);
+        }
     }
 
     private final static List<String> SOAP_RESPONSE_SERVICE_OBJECT_TYPES = Arrays.asList("type", "done", "queryLocator",

@@ -1,13 +1,15 @@
 package com.ascendix.jdbc.salesforce;
 
-import com.ascendix.jdbc.salesforce.ForceDriver;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class ForceDriverTest {
@@ -15,7 +17,7 @@ public class ForceDriverTest {
     private ForceDriver driver;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         driver = new ForceDriver();
     }
 
@@ -35,6 +37,13 @@ public class ForceDriverTest {
         assertEquals(3, actuals.size());
         assertTrue(actuals.containsKey("prop2"));
         assertEquals("", actuals.getProperty("prop2"));
+    }
+
+    @Test
+    public void testConnect_WhenWrongURL() throws  SQLException {
+        Connection connection = driver.connect("jdbc:mysql://localhost/test", new Properties());
+
+        assertNull(connection);
     }
 
 }

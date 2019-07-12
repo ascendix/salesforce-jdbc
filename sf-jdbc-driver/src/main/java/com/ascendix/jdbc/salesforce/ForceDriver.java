@@ -40,7 +40,14 @@ public class ForceDriver implements Driver {
     @Override
     public Connection connect(String url, Properties properties) throws SQLException {
         if (!acceptsURL(url)) {
-            throw new SQLException("Unknown URL format \"" + url + "\"");
+            /*
+             * According to JDBC spec:
+             * > The driver should return "null" if it realizes it is the wrong kind of driver to connect to the given URL.
+             * > This will be common, as when the JDBC driver manager is asked to connect to a given URL it passes the URL to each loaded driver in turn.
+             *
+             * Source: https://docs.oracle.com/javase/8/docs/api/java/sql/Driver.html#connect-java.lang.String-java.util.Properties-
+             */
+            return null;
         }
         try {
             Properties connStringProps = getConnStringProperties(url);

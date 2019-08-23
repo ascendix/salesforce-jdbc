@@ -46,4 +46,13 @@ public class ForceDriverTest {
         assertNull(connection);
     }
 
+    @Test
+    public void testGetConnStringProperties_StandartUrlFormat() throws  IOException {
+        Properties actuals = driver.getConnStringProperties("jdbc:ascendix:salesforce://test@test.ru:aaaa!aaa@login.salesforce.ru");
+        
+        assertEquals(2, actuals.size());
+        assertTrue(actuals.containsKey("user"));
+        assertEquals("test@test.ru", actuals.getProperty("user"));
+        assertEquals("aaaa!aaa", actuals.getProperty("password"));
+    }
 }

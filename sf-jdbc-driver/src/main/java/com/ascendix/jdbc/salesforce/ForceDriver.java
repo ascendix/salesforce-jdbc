@@ -104,7 +104,6 @@ public class ForceDriver implements Driver {
 
     @Override
     public boolean acceptsURL(String url) {
-        System.out.println("testttt" + url);
         return url != null && url.startsWith(ACCEPTABLE_URL);
     }
 

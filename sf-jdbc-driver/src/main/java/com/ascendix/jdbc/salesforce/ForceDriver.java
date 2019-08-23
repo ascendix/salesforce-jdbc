@@ -28,6 +28,7 @@ public class ForceDriver implements Driver {
 
     private static final String ACCEPTABLE_URL = "jdbc:ascendix:salesforce";
     private static final Pattern URL_PATTERN = Pattern.compile("\\A" + ACCEPTABLE_URL + "://(.*)");
+    private static final Pattern URL_HAS_AUTHORIZATION_SEGMENT = Pattern.compile("\\A" + ACCEPTABLE_URL + "://([^:]+):([^@]+)@.*");
 
     static {
         try {
@@ -80,19 +81,30 @@ public class ForceDriver implements Driver {
 
     protected Properties getConnStringProperties(String url) throws IOException {
         Properties result = new Properties();
-        Matcher matcher = URL_PATTERN.matcher(url);
-        if (matcher.matches()) {
-            String urlProperties = matcher.group(1);
+        String urlProperties = null;
+
+        Matcher stdMatcher = URL_PATTERN.matcher(url);
+        Matcher authMatcher = URL_HAS_AUTHORIZATION_SEGMENT.matcher(url);
+        
+        if (authMatcher.matches()) {
+            urlProperties = "user=" + authMatcher.group(1) + "\npassword=" + authMatcher.group(2);
+        } else if (stdMatcher.matches()) {
+            urlProperties = stdMatcher.group(1);
             urlProperties = urlProperties.replaceAll(";", "\n");
+        }
+
+        if (urlProperties != null) {
             try (InputStream in = new ByteArrayInputStream(urlProperties.getBytes(StandardCharsets.UTF_8))) {
                 result.load(in);
             }
         }
+
         return result;
     }
 
     @Override
     public boolean acceptsURL(String url) {
+        System.out.println("testttt" + url);
         return url != null && url.startsWith(ACCEPTABLE_URL);
     }
 

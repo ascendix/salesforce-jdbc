@@ -3,6 +3,8 @@ package com.ascendix.jdbc.salesforce.metadata;
 import com.ascendix.jdbc.salesforce.connection.ForceConnection;
 import com.ascendix.jdbc.salesforce.delegates.PartnerService;
 import com.ascendix.jdbc.salesforce.resultset.CachedResultSet;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -11,10 +13,9 @@ import java.sql.ResultSet;
 import java.sql.RowIdLifetime;
 import java.sql.SQLException;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 
@@ -65,47 +66,42 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 
     @Override
     public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) {
-        List<ColumnMap<String, Object>> maps = new ArrayList<>();
-        for (Table table : getTables()) {
-            if (tableNamePattern == null || table.getName().equals(tableNamePattern)) {
-                int ordinal = 1;
-                for (Column column : table.getColumns()) {
-                    ColumnMap<String, Object> map = new ColumnMap<>();
+        AtomicInteger ordinal = new AtomicInteger(1);
+        return new CachedResultSet(getTables().stream()
+                .filter(table -> tableNamePattern == null || table.getName().equals(tableNamePattern))
+                .flatMap(table -> table.getColumns().stream())
+                .filter(column -> columnNamePattern == null || column.getName().equals(columnNamePattern))
+                .map(column -> new ColumnMap<String, Object>() {{
                     TypeInfo typeInfo = lookupTypeInfo(column.getType());
-                    map.put("TABLE_CAT", null);
-                    map.put("TABLE_SCHEM", null);
-                    map.put("TABLE_NAME", table.getName());
-                    map.put("COLUMN_NAME", column.getName());
-                    map.put("DATA_TYPE", typeInfo != null ? typeInfo.sqlDataType : Types.OTHER);
-                    map.put("TYPE_NAME", column.getType());
-                    map.put("COLUMN_SIZE", column.getLength());
-                    map.put("BUFFER_LENGTH", 0);
-                    map.put("DECIMAL_DIGITS", 0);
-                    map.put("NUM_PREC_RADIX", typeInfo != null ? typeInfo.radix : 10);
-                    map.put("NULLABLE", 0);
-                    map.put("REMARKS", column.getComments());
-                    map.put("COLUMN_DEF", null);
-                    map.put("SQL_DATA_TYPE", null);
-                    map.put("SQL_DATETIME_SUB", null);
-                    map.put("CHAR_OCTET_LENGTH", 0);
-                    map.put("ORDINAL_POSITION", ordinal++);
-                    map.put("IS_NULLABLE", "");
-                    map.put("SCOPE_CATLOG", null);
-                    map.put("SCOPE_SCHEMA", null);
-                    map.put("SCOPE_TABLE", null);
-                    map.put("SOURCE_DATA_TYPE", column.getType());
+                    put("TABLE_CAT", null);
+                    put("TABLE_SCHEM", null);
+                    put("TABLE_NAME", column.getTable().getName());
+                    put("COLUMN_NAME", column.getName());
+                    put("DATA_TYPE", typeInfo != null ? typeInfo.sqlDataType : Types.OTHER);
+                    put("TYPE_NAME", column.getType());
+                    put("COLUMN_SIZE", column.getLength());
+                    put("BUFFER_LENGTH", 0);
+                    put("DECIMAL_DIGITS", 0);
+                    put("NUM_PREC_RADIX", typeInfo != null ? typeInfo.radix : 10);
+                    put("NULLABLE", 0);
+                    put("REMARKS", column.getComments());
+                    put("COLUMN_DEF", null);
+                    put("SQL_DATA_TYPE", null);
+                    put("SQL_DATETIME_SUB", null);
+                    put("CHAR_OCTET_LENGTH", 0);
+                    put("ORDINAL_POSITION", ordinal.getAndIncrement());
+                    put("IS_NULLABLE", "");
+                    put("SCOPE_CATLOG", null);
+                    put("SCOPE_SCHEMA", null);
+                    put("SCOPE_TABLE", null);
+                    put("SOURCE_DATA_TYPE", column.getType());
 
-                    map.put("NULLABLE",
+                    put("NULLABLE",
                             column.isNillable() ? DatabaseMetaData.columnNullable : DatabaseMetaData.columnNoNulls);
 
-                    // The Auto column is obtained by SchemaSpy via
-                    // ResultSetMetaData so awkward to support
-
-                    maps.add(map);
-                }
-            }
-        }
-        return new CachedResultSet(maps);
+                }})
+                .collect(Collectors.toList())
+        );
     }
 
     public static TypeInfo lookupTypeInfo(String forceTypeName) {

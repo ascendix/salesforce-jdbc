@@ -37,7 +37,7 @@
         <mapdb.version>3.0.5</mapdb.version>
         <antlr.version>3.5.2</antlr.version>
         <opencsv.version>4.2</opencsv.version>
-        <xstream.version>1.2.2</xstream.version>
+        <xstream.version>1.4.6</xstream.version>
         <org.apache.commons.io.version>2.4</org.apache.commons.io.version>
     </properties>
 

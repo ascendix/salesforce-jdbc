@@ -1,6 +1,7 @@
 package com.ascendix.jdbc.salesforce;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -8,9 +9,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class ForceDriverTest {
 
@@ -49,10 +48,24 @@ public class ForceDriverTest {
     @Test
     public void testGetConnStringProperties_StandartUrlFormat() throws  IOException {
         Properties actuals = driver.getConnStringProperties("jdbc:ascendix:salesforce://test@test.ru:aaaa!aaa@login.salesforce.ru");
-        
-        assertEquals(2, actuals.size());
+
+        assertEquals(3, actuals.size());
         assertTrue(actuals.containsKey("user"));
         assertEquals("test@test.ru", actuals.getProperty("user"));
         assertEquals("aaaa!aaa", actuals.getProperty("password"));
+        assertEquals("login.salesforce.ru", actuals.getProperty("loginDomain"));
+    }
+
+    @Test
+    public void testGetConnStringProperties_StandartUrlFormatHttpsApi() throws  IOException {
+        Properties actuals = driver.getConnStringProperties("jdbc:ascendix:salesforce://test@test.ru:aaaa!aaa@login.salesforce.ru?https=false&api=48.0");
+
+        assertEquals(5, actuals.size());
+        assertTrue(actuals.containsKey("user"));
+        assertEquals("test@test.ru", actuals.getProperty("user"));
+        assertEquals("aaaa!aaa", actuals.getProperty("password"));
+        assertEquals("login.salesforce.ru", actuals.getProperty("loginDomain"));
+        assertEquals("false", actuals.getProperty("https"));
+        assertEquals("48.0", actuals.getProperty("api"));
     }
 }

@@ -64,12 +64,14 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
 | _password_ |Login password associated with the specified username. <br>**Warning!** A password provided should contains your password and secret key joined in one string.|
 | _sessionId_ | Unique ID associated with this session. |
 | _loginDomain_ | Top-level domain for a login request. <br>Default value is _login.salesforce.com_. <br>Set _test.salesforce.com_ value to use sandbox. |
+| _https_ | Switch to use HTTP protocol instead of HTTPS <br>Default value is _true_|
+| _api_ | Api version to use. <br>Default value is _43.0_. <br>Set _test.salesforce.com_ value to use sandbox. |
 
 
 ## Supported features
 1. Queries support native SOQL;
 2. Nested queries are supported;
-3. Request caching support on local drive. Canching supports 2 modes: global and session. Global mode means that the cached result will be accessible for all system users for certain JVM session. Session cache mode works for each Salesforce connection session separately. Both modes cache stores request result while JVM still running but no longer than for 1 hour. The cache mode can be enabled with a prefix of SOQL query. How to use:
+3. Request caching support on local drive. Caching supports 2 modes: global and session. Global mode means that the cached result will be accessible for all system users for certain JVM session. Session cache mode works for each Salesforce connection session separately. Both modes cache stores request result while JVM still running but no longer than for 1 hour. The cache mode can be enabled with a prefix of SOQL query. How to use:
   * Global cache mode:
   ```SQL
   CACHE GLOBAL SELECT Id, Name FROM Account

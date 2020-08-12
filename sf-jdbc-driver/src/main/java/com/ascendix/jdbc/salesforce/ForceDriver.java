@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.Driver;
@@ -28,7 +29,8 @@ public class ForceDriver implements Driver {
 
     private static final String ACCEPTABLE_URL = "jdbc:ascendix:salesforce";
     private static final Pattern URL_PATTERN = Pattern.compile("\\A" + ACCEPTABLE_URL + "://(.*)");
-    private static final Pattern URL_HAS_AUTHORIZATION_SEGMENT = Pattern.compile("\\A" + ACCEPTABLE_URL + "://([^:]+):([^@]+)@.*");
+    private static final Pattern URL_HAS_AUTHORIZATION_SEGMENT = Pattern.compile("\\A" + ACCEPTABLE_URL + "://([^:]+):([^@]+)@([^?]*)([?](.*))?");
+    private static final Pattern PARAM_STANDARD_PATTERN = Pattern.compile("(([^=]+)=([^&]*)&?)");
 
     static {
         try {
@@ -58,6 +60,9 @@ public class ForceDriver implements Driver {
             info.setPassword(properties.getProperty("password"));
             info.setSessionId(properties.getProperty("sessionId"));
             info.setSandbox(resolveSandboxProperty(properties));
+            info.setHttps(resolveBooleanProperty(properties, "https", true));
+            info.setApiVersion(resolveStringProperty(properties, "api", ForceService.DEFAULT_API_VERSION));
+            info.setLoginDomain(resolveStringProperty(properties, "loginDomain", ForceService.DEFAULT_LOGIN_DOMAIN));
 
             PartnerConnection partnerConnection = ForceService.createPartnerConnection(info);
             return new ForceConnection(partnerConnection);
@@ -78,16 +83,46 @@ public class ForceDriver implements Driver {
         return null;
     }
 
+    private static Boolean resolveBooleanProperty(Properties properties, String propertyName, boolean defaultValue) {
+        String boolValue = properties.getProperty(propertyName);
+        if (boolValue != null) {
+            return Boolean.valueOf(boolValue);
+        }
+        return defaultValue;
+    }
 
-    protected Properties getConnStringProperties(String url) throws IOException {
+    private static String resolveStringProperty(Properties properties, String propertyName, String defaultValue) {
+        String boolValue = properties.getProperty(propertyName);
+        if (boolValue != null) {
+            return boolValue;
+        }
+        return defaultValue;
+    }
+
+
+    protected Properties getConnStringProperties(String urlString) throws IOException {
         Properties result = new Properties();
         String urlProperties = null;
 
-        Matcher stdMatcher = URL_PATTERN.matcher(url);
-        Matcher authMatcher = URL_HAS_AUTHORIZATION_SEGMENT.matcher(url);
-        
+        Matcher stdMatcher = URL_PATTERN.matcher(urlString);
+        Matcher authMatcher = URL_HAS_AUTHORIZATION_SEGMENT.matcher(urlString);
+
         if (authMatcher.matches()) {
-            urlProperties = "user=" + authMatcher.group(1) + "\npassword=" + authMatcher.group(2);
+            result.put("user", authMatcher.group(1));
+            result.put("password", authMatcher.group(2));
+            result.put("loginDomain", authMatcher.group(3));
+            if (authMatcher.groupCount() > 4 && authMatcher.group(5) != null) {
+                // has some other parameters - parse them from standard URL format like
+                // ?param1=value1&param2=value2
+                String parameters = authMatcher.group(5);
+                Matcher matcher = PARAM_STANDARD_PATTERN.matcher(parameters);
+                while(matcher.find()) {
+                    String param = matcher.group(2);
+                    String value = 3 >= matcher.groupCount() ? matcher.group(3) : null;
+                    result.put(param, value);
+                }
+
+            }
         } else if (stdMatcher.matches()) {
             urlProperties = stdMatcher.group(1);
             urlProperties = urlProperties.replaceAll(";", "\n");

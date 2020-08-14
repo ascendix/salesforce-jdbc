@@ -6,6 +6,8 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
 
@@ -43,6 +45,16 @@ public class ForceDriverTest {
         Connection connection = driver.connect("jdbc:mysql://localhost/test", new Properties());
 
         assertNull(connection);
+    }
+
+    @Test
+    @Ignore
+    public void testConnect_WhenRightURL() throws  SQLException {
+        Connection connection = driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@localorg.localhost.internal.salesforce.com:6109?https=false&api=48.0", new Properties());
+        assertNotNull(connection);
+        PreparedStatement select_id_from_account1 = connection.prepareStatement("select Id from Account");
+        ResultSet results = select_id_from_account1.executeQuery();
+        assertNotNull(results);
     }
 
     @Test

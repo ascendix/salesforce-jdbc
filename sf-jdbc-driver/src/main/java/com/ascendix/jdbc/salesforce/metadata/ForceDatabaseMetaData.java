@@ -374,7 +374,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 
     @Override
     public String getDriverVersion() throws SQLException {
-        return "1.1";
+        return "1.2.003";
     }
 
     @Override
@@ -384,7 +384,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 
     @Override
     public int getDriverMinorVersion() {
-        return 0;
+        return 2;
     }
 
     @Override

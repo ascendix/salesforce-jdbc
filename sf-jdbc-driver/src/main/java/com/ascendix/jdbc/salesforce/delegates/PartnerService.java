@@ -19,9 +19,13 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class PartnerService {
+
+    private static final String SF_JDBC_DRIVER_NAME = "SF JDBC driver";
+    private static final Logger logger = Logger.getLogger(SF_JDBC_DRIVER_NAME);
 
     private PartnerConnection partnerConnection;
     private List<String> sObjectTypesCache;
@@ -31,17 +35,22 @@ public class PartnerService {
     }
 
     public List<Table> getTables() {
+        logger.info("[PartnerService] getTables IMPLEMENTED ");
         List<DescribeSObjectResult> sObjects = getSObjectsDescription();
-        return sObjects.stream()
+        List<Table> tables = sObjects.stream()
                 .map(this::convertToTable)
                 .collect(Collectors.toList());
+        logger.info("[PartnerService] getTables tables count="+tables.size());
+        return tables;
     }
 
     public DescribeSObjectResult describeSObject(String sObjectType) throws ConnectionException {
+        logger.info("[PartnerService] describeSObject "+sObjectType);
         return partnerConnection.describeSObject(sObjectType);
     }
 
     private Table convertToTable(DescribeSObjectResult so) {
+        logger.info("[PartnerService] convertToTable "+so.getName());
         List<Field> fields = Arrays.asList(so.getFields());
         List<Column> columns = fields.stream()
                 .map(this::convertToColumn)
@@ -83,6 +92,7 @@ public class PartnerService {
             sObjectTypesCache = Arrays.stream(sobs)
                     .map(DescribeGlobalSObjectResult::getName)
                     .collect(Collectors.toList());
+            logger.info("[PartnerService] getSObjectTypes count="+sObjectTypesCache.size());
         }
         return sObjectTypesCache;
 
@@ -127,6 +137,7 @@ public class PartnerService {
     }
 
     public List<List> query(String soql, List<FieldDef> expectedSchema) throws ConnectionException {
+        logger.info("[PartnerService] query "+soql);
         List<List> resultRows = Collections.synchronizedList(new LinkedList<>());
         QueryResult queryResult = null;
         do {

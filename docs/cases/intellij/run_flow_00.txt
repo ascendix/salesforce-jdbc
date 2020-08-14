@@ -1,0 +1,81 @@
+2020-08-13 13:10:26,965 [4842581]   INFO - g.FileBasedIndexProjectHandler - Has changed files: false; project=Project (name=untitled, containerState=ACTIVE, componentStore=/Users/spuliaiev/IdeaProjects/untitled)
+2020-08-13 13:10:28,764 [4844380]   WARN - ution.rmi.RemoteProcessSupport - Aug 13, 2020 8:10:28 PM com.ascendix.jdbc.salesforce.connection.ForceConnection isValid
+2020-08-13 13:10:28,764 [4844380]   WARN - ution.rmi.RemoteProcessSupport - INFO: isValid NOT_IMPLEMENTED
+2020-08-13 13:10:28,766 [4844382]   WARN - ution.rmi.RemoteProcessSupport - Aug 13, 2020 8:10:28 PM com.ascendix.jdbc.salesforce.connection.ForceConnection isValid
+2020-08-13 13:10:28,766 [4844382]   WARN - ution.rmi.RemoteProcessSupport - INFO: isValid NOT_IMPLEMENTED
+2020-08-13 13:10:28,767 [4844383]   WARN - ution.rmi.RemoteProcessSupport - Aug 13, 2020 8:10:28 PM com.ascendix.jdbc.salesforce.connection.ForceConnection isValid
+2020-08-13 13:10:28,767 [4844383]   WARN - ution.rmi.RemoteProcessSupport - INFO: isValid NOT_IMPLEMENTED
+2020-08-13 13:10:28,780 [4844396]   WARN - ution.rmi.RemoteProcessSupport - Aug 13, 2020 8:10:28 PM com.ascendix.jdbc.salesforce.connection.ForceConnection getCatalog
+2020-08-13 13:10:28,781 [4844397]   WARN - ution.rmi.RemoteProcessSupport - INFO: getCatalog NOT_IMPLEMENTED
+2020-08-13 13:10:28,782 [4844398]   WARN - ution.rmi.RemoteProcessSupport - Aug 13, 2020 8:10:28 PM com.ascendix.jdbc.salesforce.connection.ForceConnection createStatement
+2020-08-13 13:10:28,782 [4844398]   WARN - ution.rmi.RemoteProcessSupport - INFO: createStatement
+2020-08-13 13:10:28,782 [4844398]  ERROR - ij.database.console.JdbcEngine - connection.remoteConnection.createStatement() must not be null
+java.lang.IllegalStateException: connection.remoteConnection.createStatement() must not be null
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement$Simple.createStatement(JdbcBasedSmartStatement.kt:238)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement$Simple.createStatement(JdbcBasedSmartStatement.kt:219)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement$statementInstance$1.invoke(JdbcBasedSmartStatement.kt:100)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement$statementInstance$1.invoke(JdbcBasedSmartStatement.kt:18)
+	at com.intellij.database.dataSource.connection.statements.SmartStatementsUtil.runReporting(SmartStatementsUtil.kt:80)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement.statementInstance(JdbcBasedSmartStatement.kt:99)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement.access$statementInstance(JdbcBasedSmartStatement.kt:18)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement$getCurrentStatement$1.invoke(JdbcBasedSmartStatement.kt:118)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement$getCurrentStatement$1.invoke(JdbcBasedSmartStatement.kt:18)
+	at com.intellij.database.dataSource.connection.statements.StatementHolder$OneShot.invoke(StatementHolder.kt:36)
+	at com.intellij.database.dataSource.connection.statements.StatementHolder$OneShot.invoke(StatementHolder.kt:31)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement.getCurrentStatement(JdbcBasedSmartStatement.kt:118)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement.executeInCommonWay(JdbcBasedSmartStatement.kt:64)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement.execute(JdbcBasedSmartStatement.kt:42)
+	at com.intellij.database.dataSource.connection.statements.NoisyStatement.execute(NoisyStatement.kt:23)
+	at com.intellij.database.console.JdbcEngine$RegularExecutor.execute(JdbcEngine.java:1502)
+	at com.intellij.database.console.JdbcEngine$QueryExecutionOperation.lambda$execute$1(JdbcEngine.java:2086)
+	at com.intellij.database.dialects.base.BaseExecutionEnvironmentHelper.runInSpecificEnvironment(BaseExecutionEnvironmentHelper.java:52)
+	at com.intellij.database.console.JdbcEngine$QueryExecutionOperation.execute(JdbcEngine.java:2085)
+	at com.intellij.database.console.JdbcEngine$QueryExecutionOperation.perform(JdbcEngine.java:2030)
+	at com.intellij.database.console.JdbcEngine$OperationBase.perform(JdbcEngine.java:1699)
+	at com.intellij.database.console.JdbcEngine.lambda$visitQuery$5(JdbcEngine.java:384)
+	at com.intellij.database.console.AbstractEngine.lambda$submitRequest$4(AbstractEngine.java:182)
+	at com.intellij.database.console.AbstractEngine.lambda$null$2(AbstractEngine.java:156)
+	at com.intellij.openapi.progress.impl.CoreProgressManager.executeProcessUnderProgress(CoreProgressManager.java:577)
+	at com.intellij.openapi.progress.impl.ProgressManagerImpl.executeProcessUnderProgress(ProgressManagerImpl.java:61)
+	at com.intellij.database.dataSource.AsyncUtil.underProgress(AsyncUtil.java:180)
+	at com.intellij.database.console.AbstractEngine.lambda$submitRunnable$3(AbstractEngine.java:154)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
+	at java.base/java.lang.Thread.run(Thread.java:834)
+2020-08-13 13:10:28,783 [4844399]  ERROR - ij.database.console.JdbcEngine - IntelliJ IDEA 2020.1  Build #IU-201.6668.121
+2020-08-13 13:10:28,783 [4844399]  ERROR - ij.database.console.JdbcEngine - JDK: 11.0.6; VM: OpenJDK 64-Bit Server VM; Vendor: JetBrains s.r.o
+2020-08-13 13:10:28,783 [4844399]  ERROR - ij.database.console.JdbcEngine - OS: Mac OS X
+2020-08-13 13:10:28,783 [4844399]  ERROR - ij.database.console.JdbcEngine - Last Action: Console.Jdbc.Execute
+2020-08-13 13:10:28,783 [4844399]   WARN - ic.GenericDatabaseErrorHandler - connection.remoteConnection.createStatement() must not be null
+java.lang.IllegalStateException: connection.remoteConnection.createStatement() must not be null
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement$Simple.createStatement(JdbcBasedSmartStatement.kt:238)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement$Simple.createStatement(JdbcBasedSmartStatement.kt:219)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement$statementInstance$1.invoke(JdbcBasedSmartStatement.kt:100)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement$statementInstance$1.invoke(JdbcBasedSmartStatement.kt:18)
+	at com.intellij.database.dataSource.connection.statements.SmartStatementsUtil.runReporting(SmartStatementsUtil.kt:80)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement.statementInstance(JdbcBasedSmartStatement.kt:99)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement.access$statementInstance(JdbcBasedSmartStatement.kt:18)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement$getCurrentStatement$1.invoke(JdbcBasedSmartStatement.kt:118)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement$getCurrentStatement$1.invoke(JdbcBasedSmartStatement.kt:18)
+	at com.intellij.database.dataSource.connection.statements.StatementHolder$OneShot.invoke(StatementHolder.kt:36)
+	at com.intellij.database.dataSource.connection.statements.StatementHolder$OneShot.invoke(StatementHolder.kt:31)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement.getCurrentStatement(JdbcBasedSmartStatement.kt:118)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement.executeInCommonWay(JdbcBasedSmartStatement.kt:64)
+	at com.intellij.database.dataSource.connection.statements.JdbcBasedSmartStatement.execute(JdbcBasedSmartStatement.kt:42)
+	at com.intellij.database.dataSource.connection.statements.NoisyStatement.execute(NoisyStatement.kt:23)
+	at com.intellij.database.console.JdbcEngine$RegularExecutor.execute(JdbcEngine.java:1502)
+	at com.intellij.database.console.JdbcEngine$QueryExecutionOperation.lambda$execute$1(JdbcEngine.java:2086)
+	at com.intellij.database.dialects.base.BaseExecutionEnvironmentHelper.runInSpecificEnvironment(BaseExecutionEnvironmentHelper.java:52)
+	at com.intellij.database.console.JdbcEngine$QueryExecutionOperation.execute(JdbcEngine.java:2085)
+	at com.intellij.database.console.JdbcEngine$QueryExecutionOperation.perform(JdbcEngine.java:2030)
+	at com.intellij.database.console.JdbcEngine$OperationBase.perform(JdbcEngine.java:1699)
+	at com.intellij.database.console.JdbcEngine.lambda$visitQuery$5(JdbcEngine.java:384)
+	at com.intellij.database.console.AbstractEngine.lambda$submitRequest$4(AbstractEngine.java:182)
+	at com.intellij.database.console.AbstractEngine.lambda$null$2(AbstractEngine.java:156)
+	at com.intellij.openapi.progress.impl.CoreProgressManager.executeProcessUnderProgress(CoreProgressManager.java:577)
+	at com.intellij.openapi.progress.impl.ProgressManagerImpl.executeProcessUnderProgress(ProgressManagerImpl.java:61)
+	at com.intellij.database.dataSource.AsyncUtil.underProgress(AsyncUtil.java:180)
+	at com.intellij.database.console.AbstractEngine.lambda$submitRunnable$3(AbstractEngine.java:154)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1128)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:628)
+	at java.base/java.lang.Thread.run(Thread.java:834)

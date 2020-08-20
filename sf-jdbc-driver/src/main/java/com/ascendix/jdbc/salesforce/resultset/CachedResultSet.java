@@ -55,6 +55,10 @@ public class CachedResultSet implements ResultSet, Serializable {
         this(Arrays.asList(singleRow));
     }
 
+    public CachedResultSet(ColumnMap<String, Object> singleRow, ResultSetMetaData metadata) {
+        this(Arrays.asList(singleRow), metadata);
+    }
+
     public Object getObject(String columnName) throws SQLException {
         return rows.get(getIndex()).get(columnName.toUpperCase());
     }

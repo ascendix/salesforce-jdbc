@@ -33,6 +33,7 @@ public class ForceConnection implements Connection {
     private static final Logger logger = Logger.getLogger(SF_JDBC_DRIVER_NAME);
 
     private Map connectionCache = new HashMap<>();
+    Properties clientInfo = new Properties();
 
     public ForceConnection(PartnerConnection partnerConnection) {
         this.partnerConnection = partnerConnection;
@@ -144,13 +145,13 @@ public class ForceConnection implements Connection {
     @Override
     public void setCatalog(String catalog) throws SQLException {
         // TODO Auto-generated method stub
-        logger.info("[Conn] setCatalog NOT_IMPLEMENTED "+catalog);
+        logger.info("[Conn] setCatalog NOT_IMPLEMENTED set to '"+catalog+"'");
     }
 
     @Override
     public String getCatalog() throws SQLException {
-        logger.info("[Conn] getCatalog NOT_IMPLEMENTED ");
-        return null;
+        logger.info("[Conn] getCatalog IMPLEMENTED returning "+ForceDatabaseMetaData.DEFAULT_CATALOG);
+        return ForceDatabaseMetaData.DEFAULT_CATALOG;
     }
 
     @Override
@@ -317,25 +318,27 @@ public class ForceConnection implements Connection {
     @Override
     public void setClientInfo(String name, String value) throws SQLClientInfoException {
         // TODO Auto-generated method stub
-        logger.info("[Conn] setClientInfo 1 NOT_IMPLEMENTED ");
+        logger.info("[Conn] setClientInfo 1 IMPLEMENTED "+name+"="+value);
+        clientInfo.setProperty(name, value);
     }
 
     @Override
     public void setClientInfo(Properties properties) throws SQLClientInfoException {
         // TODO Auto-generated method stub
-        logger.info("[Conn] setClientInfo 2 NOT_IMPLEMENTED ");
+        logger.info("[Conn] setClientInfo 2 IMPLEMENTED properties<>");
+        properties.stringPropertyNames().forEach(propName -> clientInfo.setProperty(propName, properties.getProperty(propName)));
     }
 
     @Override
     public String getClientInfo(String name) throws SQLException {
-        logger.info("[Conn] getClientInfo 1 NOT_IMPLEMENTED ");
-        return null;
+        logger.info("[Conn] getClientInfo 1 IMPLEMENTED for '"+name+"'");
+        return clientInfo.getProperty(name);
     }
 
     @Override
     public Properties getClientInfo() throws SQLException {
-        logger.info("[Conn] getClientInfo 2 NOT_IMPLEMENTED ");
-        return null;
+        logger.info("[Conn] getClientInfo 2 IMPLEMENTED ");
+        return clientInfo;
     }
 
     @Override

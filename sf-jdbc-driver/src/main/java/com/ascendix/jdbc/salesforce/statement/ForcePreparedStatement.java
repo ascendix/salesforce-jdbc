@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -238,6 +239,39 @@ public class ForcePreparedStatement implements PreparedStatement {
         return paramClass;
     }
 
+    public static ResultSetMetaData dummyMetaData(ColumnMap<String, Object> row) {
+        if (row == null) {
+            return null;
+        }
+        try {
+            logger.info("[PrepStat] dummyMetaData IMPLEMENTED ");
+            RowSetMetaDataImpl result = new RowSetMetaDataImpl();
+            int columnsCount = row.size();
+            result.setColumnCount(columnsCount);
+            for (int i = 1; i <= columnsCount; i++) {
+                String fieldName = row.getColumnNames().get(i-1);
+                result.setAutoIncrement(i, false);
+                result.setColumnName(i, fieldName);
+                result.setColumnLabel(i, fieldName);
+                Object value = row.getValues().get(i-1);
+                String javaTypeName = value == null ? "string" : value.getClass().getName();
+                ForceDatabaseMetaData.TypeInfo typeInfo = ForceDatabaseMetaData.lookupTypeInfoFromJavaType(javaTypeName);
+                logger.info("[PrepStat] dummyMetaData ("+i+") "+fieldName+" : "+javaTypeName+" => "+typeInfo.sqlDataType);
+                result.setColumnType(i, typeInfo.sqlDataType);
+                result.setColumnTypeName(i, typeInfo.typeName);
+                result.setPrecision(i, typeInfo.precision);
+                result.setSchemaName(i, ForceDatabaseMetaData.DEFAULT_SCHEMA);
+                result.setCatalogName(i, ForceDatabaseMetaData.DEFAULT_CATALOG);
+                result.setTableName(i, null);
+            }
+            return result;
+        } catch (Exception e) {
+            // Ignore for metadata - just return empty
+            logger.log(Level.WARNING, "Failed to compile dummy metadata information", e);
+            return null;
+        }
+    }
+
     private ResultSetMetaData loadMetaData() throws SQLException {
         try {
             logger.info("[PrepStat] loadMetaData IMPLEMENTED "+soqlQuery);
@@ -257,7 +291,8 @@ public class ForcePreparedStatement implements PreparedStatement {
                     result.setColumnType(i, typeInfo.sqlDataType);
                     result.setColumnTypeName(i, typeInfo.typeName);
                     result.setPrecision(i, typeInfo.precision);
-                    result.setSchemaName(i, "Salesforce");
+                    result.setSchemaName(i, ForceDatabaseMetaData.DEFAULT_SCHEMA);
+                    result.setCatalogName(i, ForceDatabaseMetaData.DEFAULT_CATALOG);
                     result.setTableName(i, queryAnalyzer.getFromObjectName());
                 }
                 metadata = result;

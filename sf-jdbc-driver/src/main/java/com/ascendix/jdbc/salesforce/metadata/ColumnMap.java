@@ -30,4 +30,16 @@ public class ColumnMap<K, V> implements Serializable {
     public V getByIndex(int index) {
         return values.get(index - 1);
     }
+
+    public int size() {
+        return columnNames.size();
+    }
+
+    public ArrayList<K> getColumnNames() {
+        return columnNames;
+    }
+
+    public ArrayList<V> getValues() {
+        return values;
+    }
 }

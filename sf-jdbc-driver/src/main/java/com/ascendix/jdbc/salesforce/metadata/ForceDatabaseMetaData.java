@@ -40,26 +40,31 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 
     @Override
     public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) {
-        List<ColumnMap<String, Object>> maps = new ArrayList<>();
+        logger.info("[Meta] getTables catalog="+catalog+" schema="+schemaPattern+" table="+tableNamePattern);
+        List<ColumnMap<String, Object>> rows = new ArrayList<>();
         ColumnMap<String, Object> firstRow = null;
         for (Table table : getTables()) {
-            ColumnMap<String, Object> map = new ColumnMap<>();
-            map.put("TABLE_CAT", DEFAULT_CATALOG);
-            map.put("TABLE_SCHEM", DEFAULT_SCHEMA);
-            map.put("TABLE_NAME", table.getName());
-            map.put("TABLE_TYPE", DEFAULT_TABLE_TYPE);
-            map.put("REMARKS", table.getComments());
-            map.put("TYPE_CAT", null);
-            map.put("TYPE_SCHEM", null);
-            map.put("TYPE_NAME", null);
-            map.put("SELF_REFERENCING_COL_NAME", null);
-            map.put("REF_GENERATION", null);
-            maps.add(map);
-            if (firstRow == null) {
-                firstRow = map;
+            if(tableNamePattern == null || "%".equals(tableNamePattern.trim()) || table.getName().equalsIgnoreCase(tableNamePattern)) {
+                ColumnMap<String, Object> map = new ColumnMap<>();
+                map.put("TABLE_CAT", DEFAULT_CATALOG);
+                map.put("TABLE_SCHEM", DEFAULT_SCHEMA);
+                map.put("TABLE_NAME", table.getName());
+                map.put("TABLE_TYPE", DEFAULT_TABLE_TYPE);
+                map.put("REMARKS", table.getComments());
+                map.put("TYPE_CAT", null);
+                map.put("TYPE_SCHEM", null);
+                map.put("TYPE_NAME", null);
+                map.put("SELF_REFERENCING_COL_NAME", null);
+                map.put("REF_GENERATION", null);
+                rows.add(map);
+                if (firstRow == null) {
+                    firstRow = map;
+                }
             }
         }
-        return new CachedResultSet(maps, ForcePreparedStatement.dummyMetaData(firstRow));
+        logger.info("[Meta] getTables RESULT catalog="+catalog+" schema="+schemaPattern+" table="+tableNamePattern+
+                "\n  firstRowFound="+(firstRow!=null?"yes":"no")+ " TablesFound="+rows.size());
+        return new CachedResultSet(rows, ForcePreparedStatement.dummyMetaData(firstRow));
     }
 
     private List<Table> getTables() {
@@ -74,7 +79,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 
     public Table findTableInfo(String tableName) {
         return getTables().stream()
-                .filter(table -> tableName.equals(table.getName()))
+                .filter(table -> table.getName().equalsIgnoreCase(tableName))
                 .findFirst()
                 .orElse(null);
     }
@@ -84,9 +89,9 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
         AtomicInteger ordinal = new AtomicInteger(1);
         logger.info("[Meta] getColumns catalog="+catalog+" schema="+schemaPattern+" table="+tableNamePattern+" column="+columnNamePattern );
         List<ColumnMap<String, Object>> rows = getTables().stream()
-                .filter(table -> tableNamePattern == null || table.getName().equalsIgnoreCase(tableNamePattern))
+                .filter(table -> tableNamePattern == null || "%".equals(tableNamePattern.trim()) || table.getName().equalsIgnoreCase(tableNamePattern))
                 .flatMap(table -> table.getColumns().stream())
-                .filter(column -> columnNamePattern == null || column.getName().equalsIgnoreCase(columnNamePattern))
+                .filter(column -> columnNamePattern == null || "%".equals(columnNamePattern.trim())|| column.getName().equalsIgnoreCase(columnNamePattern))
                 .map(column -> new ColumnMap<String, Object>() {{
                     TypeInfo typeInfo = lookupTypeInfo(column.getType());
                     put("TABLE_CAT", DEFAULT_CATALOG);
@@ -163,7 +168,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
         List<ColumnMap<String, Object>> maps = new ArrayList<>();
         ColumnMap<String, Object> firstRow = null;
         for (Table table : getTables()) {
-            if (table.getName().equals(tableName)) {
+            if (tableName == null || "%".equals(tableName.trim()) || table.getName().equalsIgnoreCase(tableName)) {
                 for (Column column : table.getColumns()) {
                     if (column.getName().equalsIgnoreCase("Id")) {
                         ColumnMap<String, Object> map = new ColumnMap<>();
@@ -191,7 +196,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
         List<ColumnMap<String, Object>> maps = new ArrayList<>();
         ColumnMap<String, Object> firstRow = null;
         for (Table table : getTables()) {
-            if (table.getName().equals(tableName)) {
+            if (tableName == null || "%".equals(tableName.trim()) || table.getName().equalsIgnoreCase(tableName)) {
                 for (Column column : table.getColumns()) {
                     if (column.getReferencedTable() != null && column.getReferencedColumn() != null) {
                         ColumnMap<String, Object> map = new ColumnMap<>();
@@ -226,7 +231,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
         List<ColumnMap<String, Object>> maps = new ArrayList<>();
         ColumnMap<String, Object> firstRow = null;
         for (Table table : getTables()) {
-            if (table.getName().equals(tableName)) {
+            if (tableName == null || "%".equals(tableName.trim()) || table.getName().equalsIgnoreCase(tableName)) {
                 for (Column column : table.getColumns()) {
                     if (column.getName().equalsIgnoreCase("Id")) {
                         ColumnMap<String, Object> map = new ColumnMap<>();

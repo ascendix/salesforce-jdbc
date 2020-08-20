@@ -1,12 +1,20 @@
-# sforce-jdbc [![Build Status](https://api.travis-ci.org/ascendix/salesforce-jdbc.svg?branch=master)](https://travis-ci.org/ascendix/salesforce-jdbc) [![Build Status](https://sonarcloud.io/api/project_badges/measure?project=com.ascendix.salesforce%3Asalesforce-jdbc&metric=alert_status)](https://sonarcloud.io/dashboard?id=com.ascendix.salesforce%3Asalesforce-jdbc)
+# sforce-jdbc
 Salesforce JDBC driver allows Java programs to connect to a Salesforce data services using standard, database independent Java code. Is an open source JDBC driver written in Pure Java, and communicates over SOAP/HTTP(S) protocol.
 The main purpose of the driver is to retrieve (only) data from Salesforce services for data analysis. Primary target platform for the driver usage is Eclipse BIRT engine.
+
+The original Git repository for this driver is [here](https://github.com/ascendix/salesforce-jdbc)
+However that version is not compatible with IntelliJ because of a lot of unsupported features:
+* table names and columns names filtration is not implemented
+* table name and column names are case sensitive
+* no metadata provided for queries so IntelliJ just ignores the results returned by the driver
+
+These issues were fixed in the current version in this fork.
 
 ## Supported Salesforce and Java versions
 The current version of the driver should be compatible with **Salesforce Partner API version 39.0 and higher** and **Java 8**.
 
 ## Get the driver
-Download the driver [here](https://github.com/ascendix/mvnrepo/raw/master/com/ascendix/salesforce/salesforce-jdbc/1.1-SNAPSHOT/salesforce-jdbc-1.1-20180403.104727-1-single.jar)
+Download the driver [here](https://spuliaiev-sfdc.github.io/salesforce-jdbc/deliverables/sf-jdbc-driver-1.2-SNAPSHOT-jar-with-dependencies.jar)
 
 
 ## With Maven
@@ -96,6 +104,21 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
      See how it's done in [Salesforce JDBC report sample](docs/birt/Salesforce JDBC sample.rptdesign)
   
 
+## Configure IntelliJ to use Salesforce JDBC driver
+
+1. [How to add a JDBC driver](https://www.jetbrains.com/help/idea/data-sources-and-drivers-dialog.html)
+2. How to set configuration properties for Salesforce JDBC driver.
+
+    IntelliJ provides various ways to set parameters for JDBC driver. For example, it can be done with the property binding feature in the data source editor and a report parameter.
+    Example JDBC Url:
+    
+    ```jdbc:ascendix:salesforce://dev@Local.org:123456@localorg.localhost.internal.salesforce.com:6109?https=false&api=48.0``` 
+  
+    Please check what kind of access do you have to your org - HTTP or HTTPS and the API version to use.
+    Here is screenshot about results output and autocomplete support for SOQL queries in IntelliJ:
+  
+    ![image](/docs/Autocomplete-SOQL.png)
+  
 
 ### Sponsors
 [Ascendix Technologies Inc.](https://ascendix.com/) <img src="http://ww1.prweb.com/prfiles/2006/12/12/490667/ascendixlogo.jpg" width=100 align="right"/>

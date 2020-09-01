@@ -74,8 +74,14 @@ public class ForceDriverTest {
         ResultSet catalogs = metaData.getCatalogs();
         assertNotNull(catalogs);
         String[] types = null;
-        ResultSet tables = metaData.getTables("catalog", "schemaPattern", "tableNamePattern", types);
+        ResultSet tables = metaData.getTables("catalog", "", "%", types);
         assertNotNull(tables);
+        int count = 0;
+        while(tables.next()) {
+            System.out.println(" "+tables.getString("TABLE_NAME"));
+            count++;
+        }
+        System.out.println(count+" Tables total");
     }
 
     @Test

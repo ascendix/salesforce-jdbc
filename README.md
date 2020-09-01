@@ -74,6 +74,7 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
 | _loginDomain_ | Top-level domain for a login request. <br>Default value is _login.salesforce.com_. <br>Set _test.salesforce.com_ value to use sandbox. |
 | _https_ | Switch to use HTTP protocol instead of HTTPS <br>Default value is _true_|
 | _api_ | Api version to use. <br>Default value is _43.0_. <br>Set _test.salesforce.com_ value to use sandbox. |
+| _client_ | Client Id to use. <br>Default value is empty.  |
 
 
 ## Supported features

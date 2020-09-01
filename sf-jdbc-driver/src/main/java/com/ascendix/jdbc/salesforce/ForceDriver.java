@@ -57,6 +57,7 @@ public class ForceDriver implements Driver {
             properties.putAll(connStringProps);
             ForceConnectionInfo info = new ForceConnectionInfo();
             info.setUserName(properties.getProperty("user"));
+            info.setClientName(properties.getProperty("client"));
             info.setPassword(properties.getProperty("password"));
             info.setSessionId(properties.getProperty("sessionId"));
             info.setSandbox(resolveSandboxProperty(properties));

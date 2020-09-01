@@ -8,6 +8,7 @@ import com.sforce.ws.ConnectorConfig;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
@@ -73,23 +74,32 @@ public class ForceService {
 
     private static PartnerConnection createConnectionByUserCredential(ForceConnectionInfo info)
             throws ConnectionException {
+
         ConnectorConfig partnerConfig = new ConnectorConfig();
         partnerConfig.setUsername(info.getUserName());
         partnerConfig.setPassword(info.getPassword());
+
+        PartnerConnection connection;
+
         if (info.getSandbox() != null) {
             partnerConfig.setAuthEndpoint(buildAuthEndpoint(info));
-            return Connector.newConnection(partnerConfig);
-        }
+            connection = Connector.newConnection(partnerConfig);
+        } else {
 
-        try {
-            info.setSandbox(false);
-            partnerConfig.setAuthEndpoint(buildAuthEndpoint(info));
-            return Connector.newConnection(partnerConfig);
-        } catch (ConnectionException ce) {
-            info.setSandbox(true);
-            partnerConfig.setAuthEndpoint(buildAuthEndpoint(info));
-            return Connector.newConnection(partnerConfig);
+            try {
+                info.setSandbox(false);
+                partnerConfig.setAuthEndpoint(buildAuthEndpoint(info));
+                connection = Connector.newConnection(partnerConfig);
+            } catch (ConnectionException ce) {
+                info.setSandbox(true);
+                partnerConfig.setAuthEndpoint(buildAuthEndpoint(info));
+                connection = Connector.newConnection(partnerConfig);
+            }
         }
+        if (connection != null && StringUtils.isNotBlank(info.getClientName())) {
+            connection.setCallOptions(info.getClientName(), null);
+        }
+        return connection;
     }
 
     private static String buildAuthEndpoint(ForceConnectionInfo info) {

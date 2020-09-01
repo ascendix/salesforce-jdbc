@@ -14,4 +14,5 @@ public class ForceConnectionInfo {
     private Boolean https = true;
     private String apiVersion = ForceService.DEFAULT_API_VERSION;
     private String loginDomain;
+    private String clientName;
 }

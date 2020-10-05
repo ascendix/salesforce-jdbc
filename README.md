@@ -91,7 +91,11 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
   ```
 4. Reconnect to other organization at the same host
 ```SQL
+-- Postgres Notation
 CONNECT USER admin@OtherOrg.com IDENTIFIED by "123456"
+
+-- Oracle Notation
+CONNECT admin@OtherOrg.com/123456
 ```
    P.S. You need to use the machine host name in the connection url - not MyDomain org host name. 
 

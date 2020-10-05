@@ -89,6 +89,11 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
   ```SQL
   CACHE SESSION SELECT Id, Name FROM Account
   ```
+4. Reconnect to other organization at the same host
+```SQL
+CONNECT USER admin@OtherOrg.com IDENTIFIED by "123456"
+```
+   P.S. You need to use the machine host name in the connection url - not MyDomain org host name. 
 
 ## Limitations
 1. The driver is only for read-only purposes now. Insert/udate/delete functionality is not implemented yet.

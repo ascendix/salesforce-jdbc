@@ -41,6 +41,7 @@ public class CachedResultSet implements ResultSet, Serializable {
     private transient Integer index;
     private List<ColumnMap<String, Object>> rows;
     private ResultSetMetaData metadata;
+    private SQLWarning warningsChain;
 
     public CachedResultSet(List<ColumnMap<String, Object>> rows) {
         this.rows = rows;
@@ -425,7 +426,7 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public void clearWarnings() throws SQLException {
-
+        this.warningsChain = null;
     }
 
     public void close() throws SQLException {
@@ -569,8 +570,27 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public SQLWarning getWarnings() throws SQLException {
+        return warningsChain;
+    }
 
-        return null;
+    public void addWarning(SQLWarning warn) {
+        if (warningsChain != null) {
+            SQLWarning last = warningsChain;
+            while (last != null && last.getNextWarning() != null) last = last.getNextWarning();
+            last.setNextWarning(warn);
+        } else {
+            warningsChain = warn;
+        }
+    }
+
+    public void addWarning(String reason) {
+        if (warningsChain != null) {
+            SQLWarning last = warningsChain;
+            while (last != null && last.getNextWarning() != null) last = last.getNextWarning();
+            last.setNextWarning(new SQLWarning(reason));
+        } else {
+            warningsChain = new SQLWarning(reason);
+        }
     }
 
     public void insertRow() throws SQLException {

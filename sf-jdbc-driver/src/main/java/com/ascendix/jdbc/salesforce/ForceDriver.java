@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.Driver;
@@ -19,6 +18,7 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,6 +27,9 @@ import java.util.regex.Pattern;
 @Slf4j
 public class ForceDriver implements Driver {
 
+    private static final String SF_JDBC_DRIVER_NAME = "SF JDBC driver";
+    private static final Logger logger = Logger.getLogger(SF_JDBC_DRIVER_NAME);
+
     private static final String ACCEPTABLE_URL = "jdbc:ascendix:salesforce";
     private static final Pattern URL_PATTERN = Pattern.compile("\\A" + ACCEPTABLE_URL + "://(.*)");
     private static final Pattern URL_HAS_AUTHORIZATION_SEGMENT = Pattern.compile("\\A" + ACCEPTABLE_URL + "://([^:]+):([^@]+)@([^?]*)([?](.*))?");
@@ -34,6 +37,7 @@ public class ForceDriver implements Driver {
 
     static {
         try {
+            logger.info("[ForceDriver] registration");
             DriverManager.registerDriver(new ForceDriver());
         } catch (Exception e) {
             throw new RuntimeException("Failed register ForceDriver: " + e.getMessage(), e);
@@ -57,8 +61,8 @@ public class ForceDriver implements Driver {
             properties.putAll(connStringProps);
             ForceConnectionInfo info = new ForceConnectionInfo();
             info.setUserName(properties.getProperty("user"));
-            info.setClientName(properties.getProperty("client"));
             info.setPassword(properties.getProperty("password"));
+            info.setClientName(properties.getProperty("client"));
             info.setSessionId(properties.getProperty("sessionId"));
             info.setSandbox(resolveSandboxProperty(properties));
             info.setHttps(resolveBooleanProperty(properties, "https", true));
@@ -66,7 +70,28 @@ public class ForceDriver implements Driver {
             info.setLoginDomain(resolveStringProperty(properties, "loginDomain", ForceService.DEFAULT_LOGIN_DOMAIN));
 
             PartnerConnection partnerConnection = ForceService.createPartnerConnection(info);
-            return new ForceConnection(partnerConnection);
+            return new ForceConnection(partnerConnection, (userName, userPassword) -> {
+                logger.info("[ForceDriver] relogin helper");
+                ForceConnectionInfo newInfo = new ForceConnectionInfo();
+                newInfo.setUserName(userName);
+                newInfo.setPassword(userPassword);
+                newInfo.setClientName(properties.getProperty("client"));
+                newInfo.setSessionId(properties.getProperty("sessionId"));
+                newInfo.setSandbox(resolveSandboxProperty(properties));
+                newInfo.setHttps(resolveBooleanProperty(properties, "https", true));
+                newInfo.setApiVersion(resolveStringProperty(properties, "api", ForceService.DEFAULT_API_VERSION));
+                newInfo.setLoginDomain(resolveStringProperty(properties, "loginDomain", ForceService.DEFAULT_LOGIN_DOMAIN));
+
+                PartnerConnection newPartnerConnection;
+                try {
+                    newPartnerConnection = ForceService.createPartnerConnection(newInfo);
+                    logger.log(Level.WARNING, "[ForceDriver] relogin helper success="+(newPartnerConnection != null));
+                    return newPartnerConnection;
+                } catch (ConnectionException e) {
+                    logger.log(Level.WARNING, "[ForceDriver] relogin helper failed", e);
+                    return null;
+                }
+            });
         } catch (ConnectionException | IOException e) {
             throw new SQLException(e);
         }

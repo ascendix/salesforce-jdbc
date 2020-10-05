@@ -9,10 +9,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.List;
 import java.util.Properties;
 
@@ -64,6 +61,57 @@ public class ForceDriverTest {
 
     @Test
     @Ignore
+    public void testConnect_Reconnect() throws  SQLException {
+        Connection connection = driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@spuliaiev-wsm1.internal.salesforce.com:6109?https=false&api=48.0", new Properties());
+        assertNotNull(connection);
+        PreparedStatement select_id_from_account1 = connection.prepareStatement("select Id, Name from Account");
+        ResultSet results = select_id_from_account1.executeQuery();
+        System.out.println(renderResultSet(results));
+
+        PreparedStatement reconnect = connection.prepareStatement("CONNECT USER admin@15542148823767.com IDENTIFIED by \"123456\"");
+        results = reconnect.executeQuery();
+        System.out.println(renderResultSet(results));
+        assertNotNull(results);
+        PreparedStatement select_id_from_account2 = connection.prepareStatement("select Id, Name from Account");
+        results = select_id_from_account2.executeQuery();
+        System.out.println(renderResultSet(results));
+        assertNotNull(results);
+    }
+
+    private String renderResultSet(ResultSet results) throws SQLException {
+        StringBuilder out = new StringBuilder();
+
+        int count = 0;
+        int columnsCount = results.getMetaData().getColumnCount();
+
+        // print header
+        for(int i = 0; i < columnsCount; i++) {
+            out.append(results.getMetaData().getColumnName(i+1)).append("\t");
+        }
+        out.append("\n");
+
+        while(results.next()) {
+            for(int i = 0; i < columnsCount; i++) {
+                out.append(" " + results.getString(i+1)).append("\t");
+            }
+            out.append("\n");
+            count++;
+        }
+        out.append("-----------------\n");
+        out.append(count).append(" records\n");
+        if (results.getWarnings() != null) {
+            out.append("----------------- WARNINGS:\n");
+            SQLWarning warning = results.getWarnings();
+            while(warning != null) {
+                out.append(warning.getMessage()).append("\n");
+                warning = warning.getNextWarning();
+            }
+        }
+        return out.toString();
+    }
+
+    @Test
+    @Ignore
     public void testConnect_getTables() throws  SQLException {
         ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@localorg.localhost.internal.salesforce.com:6109?https=false&api=48.0", new Properties());
         assertNotNull(connection);
@@ -82,6 +130,50 @@ public class ForceDriverTest {
             count++;
         }
         System.out.println(count+" Tables total");
+    }
+
+    @Test
+    @Ignore
+    public void testConnect_querySimple() throws  SQLException {
+        ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@localorg.localhost.internal.salesforce.com:6109?https=false&api=51.0", new Properties());
+        assertNotNull(connection);
+
+        Statement statement = connection.createStatement();
+        assertNotNull(statement);
+        ResultSet resultSet = statement.executeQuery("select Id, Name, Owner.id, Owner.Name from Account");
+        assertNotNull(resultSet);
+        assertEquals("One record should be present", resultSet.first());
+        resultSet.getMetaData();
+    }
+
+    @Test
+    @Ignore
+    public void testConnect_querySubSelect() throws  SQLException {
+        ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@localorg.localhost.internal.salesforce.com:6109?https=false&api=51.0", new Properties());
+        assertNotNull(connection);
+
+        Statement statement = connection.createStatement();
+        assertNotNull(statement);
+        ResultSet resultSet = statement.executeQuery("select Id, name, Description, OwnerId, Group.Id, Group.Name, Group.OwnerId  from SharingRecordCollection LIMIT 1");
+        assertNotNull(resultSet);
+        assertEquals("One record should be present", resultSet.first());
+        resultSet.getMetaData();
+    }
+
+    @Test
+    @Ignore
+    public void testConnect_querySelectWithUTF() throws  SQLException {
+        ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@localorg.localhost.internal.salesforce.com:6109?https=false&api=51.0", new Properties());
+        assertNotNull(connection);
+
+        Statement statement = connection.createStatement();
+        assertNotNull(statement);
+        // 🙉𥿃🙂😂𣻰😯🗸🐌
+
+        ResultSet resultSet = statement.executeQuery("select Id, Name from Account where Name like '\uD83D\uDE49\uD857\uDFC3\uD83D\uDE42\uD83D\uDE02\uD84F\uDEF0\uD83D\uDE2F\uD83D\uDDF8\uD83D\uDC0C'");
+        assertNotNull(resultSet);
+        assertEquals("One record should be present", resultSet.first());
+        resultSet.getMetaData();
     }
 
     @Test

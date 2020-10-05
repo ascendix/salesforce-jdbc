@@ -6,6 +6,8 @@ import com.ascendix.jdbc.salesforce.connection.ForceConnection;
 import com.ascendix.jdbc.salesforce.delegates.ForceResultField;
 import com.ascendix.jdbc.salesforce.metadata.ColumnMap;
 import com.ascendix.jdbc.salesforce.metadata.ForceDatabaseMetaData;
+import com.ascendix.jdbc.salesforce.statement.processor.AdminQueryProcessor;
+import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import org.apache.commons.lang3.StringUtils;
 import org.mapdb.DB;
@@ -125,6 +127,13 @@ public class ForcePreparedStatement implements PreparedStatement {
         if ("SELECT 'keep alive'".equals(soqlQuery)) {
             logger.info("[PrepStat] query KEEP ALIVE ");
             return new CachedResultSet(Collections.emptyList(), getMetaData());
+        }
+        if (AdminQueryProcessor.isAdminQuery(soqlQuery)) {
+            try {
+                return AdminQueryProcessor.processQuery(this, soqlQuery, getPartnerService());
+            } catch (ConnectionException | SOQLParsingException e) {
+                throw new SQLException(e);
+            }
         }
         try {
             String preparedSoql = prepareQuery();
@@ -366,6 +375,13 @@ public class ForcePreparedStatement implements PreparedStatement {
             partnerService = new PartnerService(connection.getPartnerConnection());
         }
         return partnerService;
+    }
+
+    public boolean reconnect(String userName, String userPass) {
+        logger.info("[PrepStat] RECONNECT IMPLEMENTED newUserName="+userName);
+        boolean updated = connection.updatePartnerConnection(userName, userPass);
+        partnerService = null;
+        return updated;
     }
 
     public void setFetchSize(int rows) throws SQLException {

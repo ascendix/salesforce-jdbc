@@ -30,8 +30,10 @@ public class ForceConnection implements Connection {
     private final PartnerConnection partnerConnection;
     private final DatabaseMetaData metadata;
     private static final String SF_JDBC_DRIVER_NAME = "SF JDBC driver";
+    private static final Logger logger = Logger.getLogger(SF_JDBC_DRIVER_NAME);
 
     private Map connectionCache = new HashMap<>();
+    Properties clientInfo = new Properties();
 
     public ForceConnection(PartnerConnection partnerConnection) {
         this.partnerConnection = partnerConnection;
@@ -74,20 +76,19 @@ public class ForceConnection implements Connection {
 
     @Override
     public Statement createStatement() {
-        Logger.getLogger(SF_JDBC_DRIVER_NAME)
-                .info(Object.class.getEnclosingMethod().getName());
+        logger.info("[Conn] createStatement 1 IMPLEMENTED ");
         return null;
     }
 
     @Override
     public CallableStatement prepareCall(String sql) {
-        Logger.getLogger(SF_JDBC_DRIVER_NAME).info(Object.class.getEnclosingMethod().getName());
+        logger.info("[Conn] prepareCall NOT_IMPLEMENTED "+sql);
         return null;
     }
 
     @Override
     public String nativeSQL(String sql) {
-        Logger.getLogger(SF_JDBC_DRIVER_NAME).info(Object.class.getEnclosingMethod().getName());
+        logger.info("[Conn] nativeSQL NOT_IMPLEMENTED "+sql);
         return null;
     }
 
@@ -314,25 +315,26 @@ public class ForceConnection implements Connection {
     @Override
     public void setClientInfo(String name, String value) throws SQLClientInfoException {
         // TODO Auto-generated method stub
-
+        logger.info("[Conn] setClientInfo 1 IMPLEMENTED "+name+"="+value);
+        clientInfo.setProperty(name, value);
     }
 
     @Override
     public void setClientInfo(Properties properties) throws SQLClientInfoException {
-        // TODO Auto-generated method stub
-
+        logger.info("[Conn] setClientInfo 2 IMPLEMENTED properties<>");
+        properties.stringPropertyNames().forEach(propName -> clientInfo.setProperty(propName, properties.getProperty(propName)));
     }
 
     @Override
     public String getClientInfo(String name) throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        logger.info("[Conn] getClientInfo 1 IMPLEMENTED for '"+name+"'");
+        return clientInfo.getProperty(name);
     }
 
     @Override
     public Properties getClientInfo() throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        logger.info("[Conn] getClientInfo 2 IMPLEMENTED ");
+        return clientInfo;
     }
 
     @Override

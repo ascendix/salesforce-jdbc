@@ -115,7 +115,7 @@ public class SoqlQueryAnalyzer {
 
     private Field findField(String name, DescribeSObjectResult objectDesc, Function<Field, String> nameFetcher) {
         return Arrays.stream(objectDesc.getFields())
-                .filter(field -> name.equals(nameFetcher.apply(field)))
+                .filter(field -> name.equalsIgnoreCase(nameFetcher.apply(field)))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Unknown field name \"" + name + "\" in object \"" + objectDesc.getName() + "\""));
     }

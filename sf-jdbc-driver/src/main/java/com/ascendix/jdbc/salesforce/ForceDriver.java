@@ -26,6 +26,9 @@ import java.util.regex.Pattern;
 @Slf4j
 public class ForceDriver implements Driver {
 
+    private static final String SF_JDBC_DRIVER_NAME = "SF JDBC driver";
+    private static final Logger logger = Logger.getLogger(SF_JDBC_DRIVER_NAME);
+
     private static final String ACCEPTABLE_URL = "jdbc:ascendix:salesforce";
     private static final Pattern URL_PATTERN = Pattern.compile("\\A" + ACCEPTABLE_URL + "://(.*)");
     private static final Pattern URL_HAS_AUTHORIZATION_SEGMENT = Pattern.compile("\\A" + ACCEPTABLE_URL + "://([^:]+):([^@]+)@([^?]*)([?](.*))?");
@@ -33,6 +36,7 @@ public class ForceDriver implements Driver {
 
     static {
         try {
+            logger.info("[ForceDriver] registration");
             DriverManager.registerDriver(new ForceDriver());
         } catch (Exception e) {
             throw new RuntimeException("Failed register ForceDriver: " + e.getMessage(), e);
@@ -56,8 +60,8 @@ public class ForceDriver implements Driver {
             properties.putAll(connStringProps);
             ForceConnectionInfo info = new ForceConnectionInfo();
             info.setUserName(properties.getProperty("user"));
-            info.setClientName(properties.getProperty("client"));
             info.setPassword(properties.getProperty("password"));
+            info.setClientName(properties.getProperty("client"));
             info.setSessionId(properties.getProperty("sessionId"));
             info.setSandbox(resolveSandboxProperty(properties));
             info.setHttps(resolveBooleanProperty(properties, "https", true));
@@ -100,7 +104,7 @@ public class ForceDriver implements Driver {
     }
 
 
-    protected Properties getConnStringProperties(String urlString) throws IOException {
+    protected static Properties getConnStringProperties(String urlString) throws IOException {
         Properties result = new Properties();
         String urlProperties = null;
 

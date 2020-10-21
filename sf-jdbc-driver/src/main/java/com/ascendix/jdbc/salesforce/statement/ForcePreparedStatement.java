@@ -7,7 +7,8 @@ import com.ascendix.jdbc.salesforce.delegates.ForceResultField;
 import com.ascendix.jdbc.salesforce.metadata.ColumnMap;
 import com.ascendix.jdbc.salesforce.metadata.ForceDatabaseMetaData;
 import com.ascendix.jdbc.salesforce.statement.processor.AdminQueryProcessor;
-import com.sforce.soap.partner.PartnerConnection;
+import com.ascendix.jdbc.salesforce.statement.processor.InsertQueryAnalyzer;
+import com.ascendix.jdbc.salesforce.statement.processor.InsertQueryProcessor;
 import com.sforce.ws.ConnectionException;
 import org.apache.commons.lang3.StringUtils;
 import org.mapdb.DB;
@@ -129,6 +130,14 @@ public class ForcePreparedStatement implements PreparedStatement {
             return new CachedResultSet(Collections.emptyList(), getMetaData());
         }
         if (AdminQueryProcessor.isAdminQuery(soqlQuery)) {
+            try {
+                return AdminQueryProcessor.processQuery(this, soqlQuery, getPartnerService());
+            } catch (ConnectionException | SOQLParsingException e) {
+                throw new SQLException(e);
+            }
+        }
+        InsertQueryAnalyzer insertQueryAnalyzer = getInsertQueryAnalyzer();
+        if (InsertQueryProcessor.isInsertQuery(soqlQuery, insertQueryAnalyzer)) {
             try {
                 return AdminQueryProcessor.processQuery(this, soqlQuery, getPartnerService());
             } catch (ConnectionException | SOQLParsingException e) {
@@ -286,7 +295,7 @@ public class ForcePreparedStatement implements PreparedStatement {
             logger.info("[PrepStat] loadMetaData IMPLEMENTED "+soqlQuery);
             if (metadata == null) {
                 RowSetMetaDataImpl result = new RowSetMetaDataImpl();
-                SoqlQueryAnalyzer queryAnalyzer = getQueryAnalyzer();
+                SoqlQueryAnalyzer queryAnalyzer = getSoqlQueryAnalyzer();
                 List<FieldDef> resultFieldDefinitions = flatten(getFieldDefinitions());
                 int columnsCount = resultFieldDefinitions.size();
                 result.setColumnCount(columnsCount);
@@ -326,19 +335,20 @@ public class ForcePreparedStatement implements PreparedStatement {
     private List<FieldDef> getFieldDefinitions() {
         logger.info("[PrepStat] getFieldDefinitions IMPLEMENTED "+soqlQuery);
         if (fieldDefinitions == null) {
-            fieldDefinitions = getQueryAnalyzer().getFieldDefinitions();
+            fieldDefinitions = getSoqlQueryAnalyzer().getFieldDefinitions();
             logger.info("[PrepStat] getFieldDefinitions:\n  "+
                     fieldDefinitions.stream().map( fd -> fd.getName()+":"+fd.getType()).collect(Collectors.joining("\n  ")));
         }
         return fieldDefinitions;
     }
 
-    private SoqlQueryAnalyzer queryAnalyzer;
+    private SoqlQueryAnalyzer soqlQueryAnalyzer;
+    private InsertQueryAnalyzer insertQueryAnalyzer;
 
-    private SoqlQueryAnalyzer getQueryAnalyzer() {
-        logger.info("[PrepStat] getQueryAnalyzer IMPLEMENTED "+soqlQuery);
-        if (queryAnalyzer == null) {
-            queryAnalyzer = new SoqlQueryAnalyzer(prepareQuery(), (objName) -> {
+    private SoqlQueryAnalyzer getSoqlQueryAnalyzer() {
+        logger.info("[PrepStat] getSoqlQueryAnalyzer IMPLEMENTED "+soqlQuery);
+        if (soqlQueryAnalyzer == null) {
+            soqlQueryAnalyzer = new SoqlQueryAnalyzer(prepareQuery(), (objName) -> {
                 try {
                     return getPartnerService().describeSObject(objName);
                 } catch (ConnectionException e) {
@@ -346,7 +356,21 @@ public class ForcePreparedStatement implements PreparedStatement {
                 }
             }, connection.getCache());
         }
-        return queryAnalyzer;
+        return soqlQueryAnalyzer;
+    }
+
+    private InsertQueryAnalyzer getInsertQueryAnalyzer() {
+        logger.info("[PrepStat] getInsertQueryAnalyzer IMPLEMENTED "+soqlQuery);
+        if (insertQueryAnalyzer == null) {
+            insertQueryAnalyzer = new InsertQueryAnalyzer(prepareQuery(), (objName) -> {
+                try {
+                    return getPartnerService().describeSObject(objName);
+                } catch (ConnectionException e) {
+                    throw new RuntimeException(e);
+                }
+            }, connection.getCache());
+        }
+        return insertQueryAnalyzer;
     }
 
     @Override
@@ -377,9 +401,9 @@ public class ForcePreparedStatement implements PreparedStatement {
         return partnerService;
     }
 
-    public boolean reconnect(String userName, String userPass) {
-        logger.info("[PrepStat] RECONNECT IMPLEMENTED newUserName="+userName);
-        boolean updated = connection.updatePartnerConnection(userName, userPass);
+    public boolean reconnect(String url, String userName, String userPass) {
+        logger.info("[PrepStat] RECONNECT IMPLEMENTED newUserName="+userName + " url="+url);
+        boolean updated = connection.updatePartnerConnection(url, userName, userPass);
         partnerService = null;
         return updated;
     }

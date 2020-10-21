@@ -1,12 +1,22 @@
 package com.ascendix.jdbc.salesforce.statement.processor;
 
+import com.ascendix.jdbc.salesforce.delegates.PartnerService;
+import com.ascendix.jdbc.salesforce.resultset.CommandLogCachedResultSet;
+import com.ascendix.jdbc.salesforce.statement.ForcePreparedStatement;
 import com.sforce.soap.partner.Error;
 import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.soap.partner.SaveResult;
 import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 
+import java.sql.ResultSet;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+
 public class InsertQueryProcessor {
+
+    private static final String SF_JDBC_DRIVER_NAME = "SF JDBC driver";
+    private static final Logger logger = Logger.getLogger(SF_JDBC_DRIVER_NAME);
 
     public String createSample(PartnerConnection partnerConnection) {
         String result = null;
@@ -56,4 +66,26 @@ public class InsertQueryProcessor {
         }
         return result;
     }
+
+    public static boolean isInsertQuery(String soqlQuery, InsertQueryAnalyzer queryAnalyzer) {
+        if (soqlQuery == null || soqlQuery.trim().length() == 0) {
+            return false;
+        }
+        soqlQuery = soqlQuery.trim();
+
+        return queryAnalyzer.analyse(soqlQuery);
+    }
+
+
+
+    public static ResultSet processQuery(ForcePreparedStatement statement, String soqlQuery, PartnerService partnerService) {
+        CommandLogCachedResultSet resultSet = new CommandLogCachedResultSet();
+        if (soqlQuery == null || soqlQuery.trim().length() == 0) {
+            resultSet.log("No SOQL or ADMIN query found");
+            return resultSet;
+        }
+
+        return resultSet;
+    }
+
 }

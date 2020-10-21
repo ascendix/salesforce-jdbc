@@ -61,6 +61,16 @@ public class ForceDriverTest {
 
     @Test
     @Ignore
+    public void testConnect_Insert() throws  SQLException {
+        Connection connection = driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@localorg.localhost.internal.salesforce.com:6109?https=false&api=48.0", new Properties());
+        assertNotNull(connection);
+        PreparedStatement select_id_from_account1 = connection.prepareStatement("insert into Account(Name, OwnerId) values ('FirstAccount', '005xx1231231233123')");
+        ResultSet results = select_id_from_account1.executeQuery();
+        assertNotNull(results);
+    }
+
+    @Test
+    @Ignore
     public void testConnect_Reconnect() throws  SQLException {
         Connection connection = driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@spuliaiev-wsm1.internal.salesforce.com:6109?https=false&api=48.0", new Properties());
         assertNotNull(connection);

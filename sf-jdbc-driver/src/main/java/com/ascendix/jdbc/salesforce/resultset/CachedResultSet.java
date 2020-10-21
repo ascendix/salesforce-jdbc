@@ -68,6 +68,10 @@ public class CachedResultSet implements ResultSet, Serializable {
         return rows.get(getIndex()).getByIndex(columnIndex);
     }
 
+    protected void addRow(ColumnMap<String, Object> row) {
+        rows.add(row);
+    }
+
     private int getIndex() {
         if (index == null) {
             index = -1;

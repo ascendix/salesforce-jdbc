@@ -30,11 +30,25 @@ import java.util.logging.Logger;
 
 public class ForceConnection implements Connection {
 
+    @FunctionalInterface
+    public interface UpdateLoginFunction {
+
+        /**
+         * Applies this function to the given arguments.
+         *
+         * @param url the first function argument
+         * @param user the second function argument
+         * @param pass the second function argument
+         * @return the function result
+         */
+        PartnerConnection apply(String url, String user, String pass);
+    }
+
     private final PartnerConnection partnerConnection;
     /** the updated partner connection in case if we want to support relogin command */
     private PartnerConnection partnerConnectionUpdated;
     /** the function to provide partner connection in case if we want to support relogin command */
-    BiFunction<String, String, PartnerConnection> loginHandler;
+    UpdateLoginFunction loginHandler;
 
     private final DatabaseMetaData metadata;
     private static final String SF_JDBC_DRIVER_NAME = "SF JDBC driver";
@@ -43,7 +57,7 @@ public class ForceConnection implements Connection {
     private Map connectionCache = new HashMap<>();
     Properties clientInfo = new Properties();
 
-    public ForceConnection(PartnerConnection partnerConnection, BiFunction<String, String, PartnerConnection> loginHandler) {
+    public ForceConnection(PartnerConnection partnerConnection, UpdateLoginFunction loginHandler) {
         this.partnerConnection = partnerConnection;
         this.metadata = new ForceDatabaseMetaData(this);
         this.loginHandler = loginHandler;
@@ -56,17 +70,17 @@ public class ForceConnection implements Connection {
         return partnerConnection;
     }
 
-    public boolean updatePartnerConnection(String userName, String userPass) {
+    public boolean updatePartnerConnection(String url, String userName, String userPass) {
         boolean result = false;
         String currentUserName = null;
         try {
             currentUserName = partnerConnection.getUserInfo().getUserName();
         } catch (ConnectionException e) {
         }
-        logger.info("[Conn] updatePartnerConnection IMPLEMENTED newUserName="+userName + " oldUserName="+currentUserName);
+        logger.info("[Conn] updatePartnerConnection IMPLEMENTED newUserName="+userName + " oldUserName="+currentUserName + " newUrl="+url);
         if (loginHandler != null) {
             try {
-                PartnerConnection newPartnerConnection = loginHandler.apply(userName, userPass);
+                PartnerConnection newPartnerConnection = loginHandler.apply(url, userName, userPass);
                 if (newPartnerConnection != null) {
                     partnerConnectionUpdated = newPartnerConnection;
                     logger.info("[Conn] updatePartnerConnection UPDATED to newUserName="+userName);

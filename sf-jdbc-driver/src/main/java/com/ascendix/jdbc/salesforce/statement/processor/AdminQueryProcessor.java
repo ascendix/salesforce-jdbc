@@ -1,8 +1,7 @@
 package com.ascendix.jdbc.salesforce.statement.processor;
 
 import com.ascendix.jdbc.salesforce.delegates.PartnerService;
-import com.ascendix.jdbc.salesforce.metadata.ColumnMap;
-import com.ascendix.jdbc.salesforce.resultset.CachedResultSet;
+import com.ascendix.jdbc.salesforce.resultset.CommandLogCachedResultSet;
 import com.ascendix.jdbc.salesforce.statement.ForcePreparedStatement;
 
 import java.sql.ResultSet;
@@ -19,9 +18,9 @@ public class AdminQueryProcessor {
       Example: CONNECT TO tcp:postgresql://localhost/connectdb USER connectuser IDENTIFIED BY connectpw;
       Local Syntax: CONNECT [ TO <smthg>] USER <user-name> IDENTIFIED BY <password>;
      */
-    private static final Pattern LOGIN_COMMAND_PG = Pattern.compile("(?i)CONNECT\\s+(TO\\s+\\S+\\s+)?USER\\s+(?<username>\\S+)\\s+IDENTIFIED BY\\s+(?<userpass>\\S+)\\s*");
+    private static final Pattern LOGIN_COMMAND_PG = Pattern.compile("(?i)CONNECT\\s+(TO\\s+(?<url>\\S+)\\s+)?USER\\s+(?<username>\\S+)\\s+IDENTIFIED BY\\s+(?<userpass>\\S+)\\s*;?");
 
-    private static final Pattern LOGIN_COMMAND_ORA = Pattern.compile("(?i)CONN(?:ECT)?\\s+(?<username>\\S+)/(?<userpass>\\S+)\\s*");
+    private static final Pattern LOGIN_COMMAND_ORA = Pattern.compile("(?i)CONN(?:ECT)?\\s+(?<username>\\S+)/(?<userpass>\\S+)\\s*;?");
 
 
     public static boolean isAdminQuery(String soqlQuery) {
@@ -42,9 +41,9 @@ public class AdminQueryProcessor {
     }
 
     public static ResultSet processQuery(ForcePreparedStatement statement, String soqlQuery, PartnerService partnerService) {
-        CachedResultSet resultSet = new CachedResultSet((ColumnMap<String, Object>) null, null);
+        CommandLogCachedResultSet resultSet = new CommandLogCachedResultSet();
         if (soqlQuery == null || soqlQuery.trim().length() == 0) {
-            resultSet.addWarning("No SOQL or ADMIN query found");
+            resultSet.log("No SOQL or ADMIN query found");
             return resultSet;
         }
         soqlQuery = soqlQuery.trim();
@@ -55,24 +54,28 @@ public class AdminQueryProcessor {
             matcherLogin = LOGIN_COMMAND_ORA.matcher(soqlQuery);
         }
         if (matcherLogin.matches()) {
-            resultSet.addWarning("Admin query: CONNECT");
+            resultSet.log("Admin query: CONNECT");
             String userName = matcherLogin.group("username");
             String userPass = matcherLogin.group("userpass");
+            String url = matcherLogin.group("url");
             if (userName != null) {
                 userName = userName.trim().replaceAll("^['\"]", "").replaceAll("['\"]$", "");
             }
             if (userPass != null) {
                 userPass = userPass.trim().replaceAll("^['\"]", "").replaceAll("['\"]$", "");
             }
+            if (url != null) {
+                url = url.trim().replaceAll("^['\"]", "").replaceAll("['\"]$", "");
+            }
             try {
-                boolean reconnected = statement.reconnect(userName, userPass);
+                boolean reconnected = statement.reconnect(url, userName, userPass);
                 if (reconnected) {
-                    resultSet.addWarning("CONNECT SUCCESS");
+                    resultSet.log("Admin query: CONNECT SUCCESS");
                 } else {
-                    resultSet.addWarning("CONNECT FAILED");
+                    resultSet.log("Admin query: CONNECT FAILED");
                 }
             } catch (Exception e) {
-                resultSet.addWarning("CONNECT ERROR");
+                resultSet.log("Admin query: CONNECT ERROR");
             }
         }
         return resultSet;

@@ -18,6 +18,7 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -69,7 +70,39 @@ public class ForceDriver implements Driver {
             info.setLoginDomain(resolveStringProperty(properties, "loginDomain", ForceService.DEFAULT_LOGIN_DOMAIN));
 
             PartnerConnection partnerConnection = ForceService.createPartnerConnection(info);
-            return new ForceConnection(partnerConnection);
+            return new ForceConnection(partnerConnection, (newUrl, userName, userPassword) -> {
+                logger.info("[ForceDriver] relogin helper ");
+                Properties newConnStringProps;
+                try {
+                    newConnStringProps = getConnStringProperties(newUrl);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "[ForceDriver] relogin helper failed - url parsing error", e);
+                    return null;
+
+                }
+                Properties newProperties = new Properties();
+                properties.putAll(newConnStringProps);
+
+                ForceConnectionInfo newInfo = new ForceConnectionInfo();
+                newInfo.setUserName(userName);
+                newInfo.setPassword(userPassword);
+                newInfo.setClientName(newProperties.getProperty("client"));
+                newInfo.setSessionId(newProperties.getProperty("sessionId"));
+                newInfo.setSandbox(resolveSandboxProperty(newProperties));
+                newInfo.setHttps(resolveBooleanProperty(newProperties, "https", true));
+                newInfo.setApiVersion(resolveStringProperty(newProperties, "api", ForceService.DEFAULT_API_VERSION));
+                newInfo.setLoginDomain(resolveStringProperty(newProperties, "loginDomain", ForceService.DEFAULT_LOGIN_DOMAIN));
+
+                PartnerConnection newPartnerConnection;
+                try {
+                    newPartnerConnection = ForceService.createPartnerConnection(newInfo);
+                    logger.log(Level.WARNING, "[ForceDriver] relogin helper success="+(newPartnerConnection != null));
+                    return newPartnerConnection;
+                } catch (ConnectionException e) {
+                    logger.log(Level.WARNING, "[ForceDriver] relogin helper failed", e);
+                    return null;
+                }
+            });
         } catch (ConnectionException | IOException e) {
             throw new SQLException(e);
         }

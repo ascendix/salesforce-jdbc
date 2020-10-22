@@ -81,6 +81,15 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
   ```SQL
   CACHE SESSION SELECT Id, Name FROM Account
   ```
+4. Reconnect to other organization at the same host
+```SQL
+-- Postgres Notation
+CONNECT USER admin@OtherOrg.com IDENTIFIED by "123456"
+
+-- Oracle Notation
+CONNECT admin@OtherOrg.com/123456
+```
+   P.S. You need to use the machine host name in the connection url - not MyDomain org host name. 
 
 ## Limitations
 1. The driver is only for read-only purposes now. Insert/udate/delete functionality is not implemented yet.
@@ -97,6 +106,21 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
      See how it's done in [Salesforce JDBC report sample](docs/birt/Salesforce JDBC sample.rptdesign)
   
 
+## Configure IntelliJ to use Salesforce JDBC driver
+
+1. [How to add a JDBC driver](https://www.jetbrains.com/help/idea/data-sources-and-drivers-dialog.html)
+2. How to set configuration properties for Salesforce JDBC driver.
+
+    IntelliJ provides various ways to set parameters for JDBC driver. For example, it can be done with the property binding feature in the data source editor and a report parameter.
+    Example JDBC Url:
+    
+    ```jdbc:ascendix:salesforce://dev@Local.org:123456@localorg.localhost.internal.salesforce.com:6109?https=false&api=48.0``` 
+  
+    Please check what kind of access do you have to your org - HTTP or HTTPS and the API version to use.
+    Here is screenshot about results output and autocomplete support for SOQL queries in IntelliJ:
+  
+    ![image](/docs/Autocomplete-SOQL.png)
+  
 
 ### Sponsors
 [Ascendix Technologies Inc.](https://ascendix.com/) <img src="http://ww1.prweb.com/prfiles/2006/12/12/490667/ascendixlogo.jpg" width=100 align="right"/>

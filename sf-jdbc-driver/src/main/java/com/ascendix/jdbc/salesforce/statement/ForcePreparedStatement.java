@@ -6,6 +6,7 @@ import com.ascendix.jdbc.salesforce.connection.ForceConnection;
 import com.ascendix.jdbc.salesforce.delegates.ForceResultField;
 import com.ascendix.jdbc.salesforce.metadata.ColumnMap;
 import com.ascendix.jdbc.salesforce.metadata.ForceDatabaseMetaData;
+import com.ascendix.jdbc.salesforce.statement.processor.AdminQueryProcessor;
 import com.sforce.ws.ConnectionException;
 import org.apache.commons.lang3.StringUtils;
 import org.mapdb.DB;
@@ -126,6 +127,13 @@ public class ForcePreparedStatement implements PreparedStatement {
             logger.info("[PrepStat] query KEEP ALIVE ");
             return new CachedResultSet(Collections.emptyList(), getMetaData());
         }
+        if (AdminQueryProcessor.isAdminQuery(soqlQuery)) {
+            try {
+                return AdminQueryProcessor.processQuery(this, soqlQuery, getPartnerService());
+            } catch (ConnectionException | SOQLParsingException e) {
+                throw new SQLException(e);
+            }
+        }
         try {
             String preparedSoql = prepareQuery();
             List<List> forceQueryResult = getPartnerService().query(preparedSoql, getFieldDefinitions());
@@ -186,6 +194,8 @@ public class ForcePreparedStatement implements PreparedStatement {
     public List<Object> getParameters() {
         logger.info("[PrepStat] getParameters IMPLEMENTED "+soqlQuery);
         int paramsCountInQuery = StringUtils.countMatches(soqlQuery, '?');
+        logger.info("[PrepStat] getParameters   detected "+paramsCountInQuery+" parameters");
+        logger.info("[PrepStat] getParameters   parameters provided "+parameters.size());
         if (parameters.size() < paramsCountInQuery) {
             parameters.addAll(Collections.nCopies(paramsCountInQuery - parameters.size(), null));
         }
@@ -313,8 +323,11 @@ public class ForcePreparedStatement implements PreparedStatement {
     private List<FieldDef> fieldDefinitions;
 
     private List<FieldDef> getFieldDefinitions() {
+        logger.info("[PrepStat] getFieldDefinitions IMPLEMENTED "+soqlQuery);
         if (fieldDefinitions == null) {
             fieldDefinitions = getQueryAnalyzer().getFieldDefinitions();
+            logger.info("[PrepStat] getFieldDefinitions:\n  "+
+                    fieldDefinitions.stream().map( fd -> fd.getName()+":"+fd.getType()).collect(Collectors.joining("\n  ")));
         }
         return fieldDefinitions;
     }
@@ -340,6 +353,7 @@ public class ForcePreparedStatement implements PreparedStatement {
     }
 
     public ResultSetMetaData getMetaData() throws SQLException {
+        logger.info("[PrepStat] getMetaData IMPLEMENTED "+soqlQuery);
         return cacheMode == CacheMode.NO_CACHE
                 ? loadMetaData()
                 : metadataCache.computeIfAbsent(getCacheKey(), s -> {
@@ -353,10 +367,19 @@ public class ForcePreparedStatement implements PreparedStatement {
     }
 
     private PartnerService getPartnerService() throws ConnectionException {
+        logger.info("[PrepStat] getPartnerService IMPLEMENTED "+soqlQuery);
         if (partnerService == null) {
+            logger.info("[PrepStat] getPartnerService creating service ");
             partnerService = new PartnerService(connection.getPartnerConnection());
         }
         return partnerService;
+    }
+
+    public boolean reconnect(String url, String userName, String userPass) {
+        logger.info("[PrepStat] RECONNECT IMPLEMENTED newUserName="+userName + " url="+url);
+        boolean updated = connection.updatePartnerConnection(url, userName, userPass);
+        partnerService = null;
+        return updated;
     }
 
     public void setFetchSize(int rows) throws SQLException {

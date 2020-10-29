@@ -685,21 +685,18 @@ public class ForcePreparedStatement implements PreparedStatement {
     @Override
     public ResultSet getResultSet() throws SQLException {
         logger.info("[PrepStat] getResultSet NOT_IMPLEMENTED "+soqlQuery);
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public int getUpdateCount() throws SQLException {
         logger.info("[PrepStat] getUpdateCount NOT_IMPLEMENTED "+soqlQuery);
-        // TODO Auto-generated method stub
         return -1;
     }
 
     @Override
     public boolean getMoreResults() throws SQLException {
         logger.info("[PrepStat] getMoreResults NOT_IMPLEMENTED "+soqlQuery);
-        // TODO Auto-generated method stub
         return false;
     }
 
@@ -723,14 +720,12 @@ public class ForcePreparedStatement implements PreparedStatement {
 
     @Override
     public int getResultSetType() throws SQLException {
-        // TODO Auto-generated method stub
         logger.info("[PrepStat] getResultSetType NOT_IMPLEMENTED "+soqlQuery);
         return 0;
     }
 
     @Override
     public void addBatch(String sql) throws SQLException {
-        // TODO Auto-generated method stub
         logger.info("[PrepStat] addBatch NOT_IMPLEMENTED "+sql);
 
     }
@@ -738,28 +733,23 @@ public class ForcePreparedStatement implements PreparedStatement {
     @Override
     public void clearBatch() throws SQLException {
         logger.info("[PrepStat] clearBatch NOT_IMPLEMENTED "+soqlQuery);
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public int[] executeBatch() throws SQLException {
         logger.info("[PrepStat] executeBatch NOT_IMPLEMENTED "+soqlQuery);
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Connection getConnection() throws SQLException {
         logger.info("[PrepStat] getConnection NOT_IMPLEMENTED "+soqlQuery);
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public boolean getMoreResults(int current) throws SQLException {
         logger.info("[PrepStat] getMoreResults NOT_IMPLEMENTED "+soqlQuery);
-        // TODO Auto-generated method stub
         return false;
     }
 

@@ -356,7 +356,6 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 
     @Override
     public <T> T unwrap(Class<T> iface) throws SQLException {
-        // TODO Auto-generated method stub
         logger.info("[Meta] unwrap requested NOT_IMPLEMENTED ifaceType="+iface.getName());
         return null;
     }
@@ -438,7 +437,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 
     @Override
     public String getDriverVersion() throws SQLException {
-        return "1.2.014";
+        return "1.2.6";
     }
 
     @Override
@@ -724,7 +723,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
     @Override
     public String getSchemaTerm() throws SQLException {
         // TODO Auto-generated method stub
-        return "schema";
+        return DEFAULT_SCHEMA;
     }
 
     @Override
@@ -736,7 +735,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
     @Override
     public String getCatalogTerm() throws SQLException {
         // TODO Auto-generated method stub
-        return "database";
+        return DEFAULT_CATALOG;
     }
 
     @Override

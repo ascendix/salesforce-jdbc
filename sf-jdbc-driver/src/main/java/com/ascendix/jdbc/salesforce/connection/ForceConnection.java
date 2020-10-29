@@ -152,25 +152,21 @@ public class ForceConnection implements Connection {
 
     @Override
     public boolean getAutoCommit() throws SQLException {
-        // TODO Auto-generated method stub
         return true;
     }
 
     @Override
     public void commit() throws SQLException {
-        // TODO Auto-generated method stub
         logger.info("[Conn] commit NOT_IMPLEMENTED ");
     }
 
     @Override
     public void rollback() throws SQLException {
-        // TODO Auto-generated method stub
         logger.info("[Conn] rollback NOT_IMPLEMENTED ");
     }
 
     @Override
     public void close() throws SQLException {
-        // TODO Auto-generated method stub
         logger.info("[Conn] close NOT_IMPLEMENTED ");
     }
 

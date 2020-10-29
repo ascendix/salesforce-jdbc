@@ -7,8 +7,6 @@ import com.ascendix.jdbc.salesforce.delegates.ForceResultField;
 import com.ascendix.jdbc.salesforce.metadata.ColumnMap;
 import com.ascendix.jdbc.salesforce.metadata.ForceDatabaseMetaData;
 import com.ascendix.jdbc.salesforce.statement.processor.AdminQueryProcessor;
-import com.ascendix.jdbc.salesforce.statement.processor.InsertQueryAnalyzer;
-import com.ascendix.jdbc.salesforce.statement.processor.InsertQueryProcessor;
 import com.sforce.ws.ConnectionException;
 import org.apache.commons.lang3.StringUtils;
 import org.mapdb.DB;
@@ -130,14 +128,6 @@ public class ForcePreparedStatement implements PreparedStatement {
             return new CachedResultSet(Collections.emptyList(), getMetaData());
         }
         if (AdminQueryProcessor.isAdminQuery(soqlQuery)) {
-            try {
-                return AdminQueryProcessor.processQuery(this, soqlQuery, getPartnerService());
-            } catch (ConnectionException | SOQLParsingException e) {
-                throw new SQLException(e);
-            }
-        }
-        InsertQueryAnalyzer insertQueryAnalyzer = getInsertQueryAnalyzer();
-        if (InsertQueryProcessor.isInsertQuery(soqlQuery, insertQueryAnalyzer)) {
             try {
                 return AdminQueryProcessor.processQuery(this, soqlQuery, getPartnerService());
             } catch (ConnectionException | SOQLParsingException e) {
@@ -343,7 +333,6 @@ public class ForcePreparedStatement implements PreparedStatement {
     }
 
     private SoqlQueryAnalyzer soqlQueryAnalyzer;
-    private InsertQueryAnalyzer insertQueryAnalyzer;
 
     private SoqlQueryAnalyzer getSoqlQueryAnalyzer() {
         logger.info("[PrepStat] getSoqlQueryAnalyzer IMPLEMENTED "+soqlQuery);
@@ -357,20 +346,6 @@ public class ForcePreparedStatement implements PreparedStatement {
             }, connection.getCache());
         }
         return soqlQueryAnalyzer;
-    }
-
-    private InsertQueryAnalyzer getInsertQueryAnalyzer() {
-        logger.info("[PrepStat] getInsertQueryAnalyzer IMPLEMENTED "+soqlQuery);
-        if (insertQueryAnalyzer == null) {
-            insertQueryAnalyzer = new InsertQueryAnalyzer(prepareQuery(), (objName) -> {
-                try {
-                    return getPartnerService().describeSObject(objName);
-                } catch (ConnectionException e) {
-                    throw new RuntimeException(e);
-                }
-            }, connection.getCache());
-        }
-        return insertQueryAnalyzer;
     }
 
     @Override

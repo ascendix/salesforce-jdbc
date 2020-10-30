@@ -1,5 +1,6 @@
 # sforce-jdbc [![Build Status](https://api.travis-ci.org/ascendix/salesforce-jdbc.svg?branch=master)](https://travis-ci.org/ascendix/salesforce-jdbc) [![Build Status](https://sonarcloud.io/api/project_badges/measure?project=com.ascendix.salesforce%3Asalesforce-jdbc&metric=alert_status)](https://sonarcloud.io/dashboard?id=com.ascendix.salesforce%3Asalesforce-jdbc)
-Salesforce JDBC driver allows Java programs to connect to a Salesforce data services using standard, database independent Java code. Is an open source JDBC driver written in Pure Java, and communicates over SOAP/HTTP(S) protocol.
+Salesforce JDBC driver allows Java programs to connect to Salesforce data services using standard, database independent Java code. It is an open source JDBC driver written in Pure Java, and communicates over SOAP/HTTP(S) protocol.
+
 The main purpose of the driver is to retrieve (only) data from Salesforce services for data analysis. Primary target platform for the driver usage is Eclipse BIRT engine.
 
 ## Supported Salesforce and Java versions
@@ -43,7 +44,7 @@ com.ascendix.jdbc.salesforce.ForceDriver
 ```
 jdbc:ascendix:salesforce://[;propertyName1=propertyValue1[;propertyName2=propertyValue2]...]
 ```
-There are two ways to connect to salesforce:
+There are two ways to connect to Salesforce:
 1. by using _user_ and _password_;
 2. by using _sessionId_.
 
@@ -61,7 +62,7 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
 | Property | Description |
 | --- | --- |
 | _user_ | Login username. |
-| _password_ |Login password associated with the specified username. <br>**Warning!** A password provided should contains your password and secret key joined in one string.|
+| _password_ | Login password is associated with the specified username. <br>**Warning!** A password provided should contain your password and secret key joined in one string.|
 | _sessionId_ | Unique ID associated with this session. |
 | _loginDomain_ | Top-level domain for a login request. <br>Default value is _login.salesforce.com_. <br>Set _test.salesforce.com_ value to use sandbox. |
 
@@ -69,7 +70,7 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
 ## Supported features
 1. Queries support native SOQL;
 2. Nested queries are supported;
-3. Request caching support on local drive. Canching supports 2 modes: global and session. Global mode means that the cached result will be accessible for all system users for certain JVM session. Session cache mode works for each Salesforce connection session separately. Both modes cache stores request result while JVM still running but no longer than for 1 hour. The cache mode can be enabled with a prefix of SOQL query. How to use:
+3. Request caching support on local drive. Caching supports 2 modes: global and session. Global mode means that the cached result will be accessible for all system users for certain JVM session. Session cache mode works for each Salesforce connection session separately. Both modes cache stores request result while JVM is still running but no longer than for 1 hour. The cache mode can be enabled with a prefix of SOQL query. How to use:
   * Global cache mode:
   ```SQL
   CACHE GLOBAL SELECT Id, Name FROM Account

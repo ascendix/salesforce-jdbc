@@ -293,7 +293,7 @@ public class ForcePreparedStatement implements PreparedStatement {
                     FieldDef field = resultFieldDefinitions.get(i - 1);
                     result.setAutoIncrement(i, false);
                     result.setColumnName(i, field.getName());
-                    result.setColumnLabel(i, field.getName());
+                    result.setColumnLabel(i, field.getAlias());
                     String forceTypeName = field.getType();
                     ForceDatabaseMetaData.TypeInfo typeInfo = ForceDatabaseMetaData.lookupTypeInfo(forceTypeName);
                     result.setColumnType(i, typeInfo.sqlDataType);

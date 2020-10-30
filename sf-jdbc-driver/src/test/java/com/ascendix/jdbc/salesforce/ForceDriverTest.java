@@ -150,9 +150,9 @@ public class ForceDriverTest {
 
         Statement statement = connection.createStatement();
         assertNotNull(statement);
-        ResultSet resultSet = statement.executeQuery("select Id, Name, Owner.id, Owner.Name from Account");
+        ResultSet resultSet = statement.executeQuery("select Id, Account.Name, Owner.id, Owner.Name from Account");
         assertNotNull(resultSet);
-        assertEquals("One record should be present", resultSet.first());
+        assertNotNull("One record should be present", resultSet.first());
         resultSet.getMetaData();
     }
 

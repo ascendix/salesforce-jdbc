@@ -16,11 +16,11 @@ import org.apache.commons.collections4.IteratorUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class PartnerService {
 
@@ -143,35 +143,52 @@ public class PartnerService {
         do {
             queryResult = queryResult == null ? partnerConnection.query(soql)
                     : partnerConnection.queryMore(queryResult.getQueryLocator());
-            resultRows.addAll(removeServiceInfo(Arrays.asList(queryResult.getRecords())));
+
+            List<XmlObject> rows = Arrays.asList(queryResult.getRecords());
+            // extract the root entity name
+            Object rootEntityName = rows.stream().filter(xmlo -> "type".equals(xmlo.getName().getLocalPart())).findFirst().map(XmlObject::getValue).orElse(null);
+            String parentName = null;
+            resultRows.addAll(removeServiceInfo(rows, parentName, rootEntityName==null ? null : (String)rootEntityName));
         } while (!queryResult.isDone());
 
         return PartnerResultToCrtesianTable.expand(resultRows, expectedSchema);
     }
 
-    private List<List> removeServiceInfo(Iterator<XmlObject> rows) {
-        return removeServiceInfo(IteratorUtils.toList(rows));
-    }
-
-    private List<List> removeServiceInfo(List<XmlObject> rows) {
+    private List<List> removeServiceInfo(List<XmlObject> rows, String parentName, String rootEntityName) {
         return rows.stream()
                 .filter(this::isDataObjectType)
-                .map(this::removeServiceInfo)
+                .map(row -> removeServiceInfo(row, parentName, rootEntityName))
                 .collect(Collectors.toList());
     }
 
-    private List removeServiceInfo(XmlObject row) {
+    private List<ForceResultField> removeServiceInfo(XmlObject row, String parentName, String rootEntityName) {
         return IteratorUtils.toList(row.getChildren()).stream()
                 .filter(this::isDataObjectType)
                 .skip(1) // Removes duplicate Id from SF Partner API response
                 // (https://developer.salesforce.com/forums/?id=906F00000008kciIAA)
-                .map(field -> isNestedResultset(field)
-                        ? removeServiceInfo(field.getChildren())
-                        : toForceResultField(field))
+                .flatMap(field -> translateField(field, parentName, rootEntityName))
                 .collect(Collectors.toList());
     }
 
-    private ForceResultField toForceResultField(XmlObject field) {
+    private Stream<ForceResultField> translateField(XmlObject field, String parentName, String rootEntityName) {
+        Stream.Builder outStream = Stream.builder();
+
+        String fieldType = field.getXmlType() != null ? field.getXmlType().getLocalPart() : null;
+        if ("sObject".equalsIgnoreCase(fieldType)) {
+            List<ForceResultField> childFields = removeServiceInfo(field, field.getName().getLocalPart(), rootEntityName);
+            childFields.forEach(outStream::add);
+        } else {
+            if (isNestedResultset(field)) {
+                outStream.add(removeServiceInfo(IteratorUtils.toList(field.getChildren()), field.getName().getLocalPart(), rootEntityName));
+            } else {
+                outStream.add(toForceResultField(field, parentName, rootEntityName));
+            }
+        }
+        return outStream.build();
+    }
+
+
+    private ForceResultField toForceResultField(XmlObject field, String parentName, String rootEntityName) {
         String fieldType = field.getXmlType() != null ? field.getXmlType().getLocalPart() : null;
         if ("sObject".equalsIgnoreCase(fieldType)) {
             List<XmlObject> children = new ArrayList<>();
@@ -179,6 +196,9 @@ public class PartnerService {
             field = children.get(2);
         }
         String name = field.getName().getLocalPart();
+        if (parentName != null && (rootEntityName == null || !rootEntityName.equals(parentName))) {
+            name = parentName+"."+name;
+        }
         Object value = field.getValue();
         return new ForceResultField(null, fieldType, name, value);
     }
@@ -190,7 +210,7 @@ public class PartnerService {
     private final static List<String> SOAP_RESPONSE_SERVICE_OBJECT_TYPES = Arrays.asList("type", "done", "queryLocator",
             "size");
 
-    private boolean isDataObjectType(XmlObject object) {
-        return !SOAP_RESPONSE_SERVICE_OBJECT_TYPES.contains(object.getName().getLocalPart());
+    private boolean isDataObjectType(XmlObject obj) {
+        return !SOAP_RESPONSE_SERVICE_OBJECT_TYPES.contains(obj.getName().getLocalPart());
     }
 }

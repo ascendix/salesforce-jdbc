@@ -30,6 +30,12 @@ public class SoqlQueryAnalyzerTest {
                 .collect(Collectors.toList());
     }
 
+    private List<String> listFlatFieldAliases(SoqlQueryAnalyzer analyzer) {
+        return listFlatFieldDefinitions(analyzer.getFieldDefinitions()).stream()
+                .map(FieldDef::getAlias)
+                .collect(Collectors.toList());
+    }
+
     @Test
     public void testGetFieldNames_SelectWithReferences() {
         SoqlQueryAnalyzer analyzer = new SoqlQueryAnalyzer(" select Id , Account.Name \r\nfrom Contact\r\n where something = 'nothing' ", n -> this.describeSObject(n));
@@ -42,8 +48,29 @@ public class SoqlQueryAnalyzerTest {
     @Test
     public void testGetFieldNames_SelectWithAggregateAliased() {
         SoqlQueryAnalyzer analyzer = new SoqlQueryAnalyzer(" select Id , Account.Name, count(id) aggrAlias1\r\nfrom Contact\r\n where something = 'nothing' ", n -> this.describeSObject(n));
+        // Just Name is confusing - see the case
         List<String> expecteds = Arrays.asList("Id", "Name", "aggrAlias1");
         List<String> actuals = listFlatFieldNames(analyzer);
+
+        assertEquals(expecteds, actuals);
+    }
+
+    @Test
+    public void testGetFieldNames_SubSelectWithSameFields() {
+        SoqlQueryAnalyzer analyzer = new SoqlQueryAnalyzer(" select Id, Account.Name, Owner.Id, Owner.Name from Account ", n -> this.describeSObject(n));
+        // Just Name is confusing - see the case
+        List<String> expecteds = Arrays.asList("Id", "Name", "Id", "Name");
+        List<String> actuals = listFlatFieldNames(analyzer);
+
+        assertEquals(expecteds, actuals);
+    }
+
+    @Test
+    public void testGetFieldNames_SubSelectWithSameFieldAliases() {
+        SoqlQueryAnalyzer analyzer = new SoqlQueryAnalyzer(" select Id, Account.Name, Owner.Id, Owner.Name from Account ", n -> this.describeSObject(n));
+        // Just Name is confusing - see the case
+        List<String> expecteds = Arrays.asList("Id", "Name", "Owner.Id", "Owner.Name");
+        List<String> actuals = listFlatFieldAliases(analyzer);
 
         assertEquals(expecteds, actuals);
     }
@@ -103,7 +130,7 @@ public class SoqlQueryAnalyzerTest {
 
         List<FieldDef> actuals = listFlatFieldDefinitions(analyzer.getFieldDefinitions());
         assertEquals(1, actuals.size());
-        assertEquals("MIN", actuals.get(0).getName());
+        assertEquals("MIN", actuals.get(0).getAlias());
         assertEquals("string", actuals.get(0).getType());
     }
 
@@ -165,7 +192,7 @@ public class SoqlQueryAnalyzerTest {
         assertEquals("id", fieldDef.getType());
 
         fieldDef = (FieldDef) suqueryDef.get(1);
-        assertEquals("maxLastName", fieldDef.getName());
+        assertEquals("maxLastName", fieldDef.getAlias());
         assertEquals("string", fieldDef.getType());
 
         fieldDef = (FieldDef) actuals.get(2);

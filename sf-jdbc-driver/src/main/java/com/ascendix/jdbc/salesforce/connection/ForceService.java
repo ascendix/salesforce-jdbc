@@ -8,6 +8,7 @@ import com.sforce.ws.ConnectorConfig;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
@@ -19,11 +20,11 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class ForceService {
 
-    private static final String DEFAULT_LOGIN_DOMAIN = "login.salesforce.com";
+    public static final String DEFAULT_LOGIN_DOMAIN = "login.salesforce.com";
     private static final String SANDBOX_LOGIN_DOMAIN = "test.salesforce.com";
     private static final long CONNECTION_TIMEOUT = TimeUnit.SECONDS.toMillis(10);
     private static final long READ_TIMEOUT = TimeUnit.SECONDS.toMillis(30);
-    private static final String DEFAULT_API_VERSION = "43.0";
+    public static final String DEFAULT_API_VERSION = "50.0";
     public static final int EXPIRE_AFTER_CREATE = 60;
     public static final int EXPIRE_STORE_SIZE = 16;
 
@@ -76,26 +77,32 @@ public class ForceService {
         ConnectorConfig partnerConfig = new ConnectorConfig();
         partnerConfig.setUsername(info.getUserName());
         partnerConfig.setPassword(info.getPassword());
-        if (info.getSandbox() != null) {
-            partnerConfig.setAuthEndpoint(buildAuthEndpoint(info.getSandbox()));
-            return Connector.newConnection(partnerConfig);
-        }
 
-        try {
-            partnerConfig.setAuthEndpoint(buildAuthEndpoint(false));
-            return Connector.newConnection(partnerConfig);
-        } catch (ConnectionException ce) {
-            partnerConfig.setAuthEndpoint(buildAuthEndpoint(true));
-            return Connector.newConnection(partnerConfig);
+        PartnerConnection connection;
+
+        if (info.getSandbox() != null) {
+            partnerConfig.setAuthEndpoint(buildAuthEndpoint(info));
+            connection = Connector.newConnection(partnerConfig);
+        } else {
+            try {
+                info.setSandbox(false);
+                partnerConfig.setAuthEndpoint(buildAuthEndpoint(info));
+                    connection = Connector.newConnection(partnerConfig);
+            } catch (ConnectionException ce) {
+                info.setSandbox(true);
+                partnerConfig.setAuthEndpoint(buildAuthEndpoint(info));
+                connection = Connector.newConnection(partnerConfig);
+            }
         }
+        if (connection != null && StringUtils.isNotBlank(info.getClientName())) {
+            connection.setCallOptions(info.getClientName(), null);
+        }
+        return connection;
     }
 
-    private static String buildAuthEndpoint(boolean sandbox) {
-        if (sandbox) {
-            return String.format("https://%s/services/Soap/u/%s", SANDBOX_LOGIN_DOMAIN, DEFAULT_API_VERSION);
-        } else {
-            return String.format("https://%s/services/Soap/u/%s", DEFAULT_LOGIN_DOMAIN, DEFAULT_API_VERSION);
-        }
-
+    private static String buildAuthEndpoint(ForceConnectionInfo info) {
+        String protocol = info.getHttps() ? "https" : "http";
+        String domain = info.getSandbox() ? SANDBOX_LOGIN_DOMAIN : info.getLoginDomain() != null ? info.getLoginDomain() : DEFAULT_LOGIN_DOMAIN;
+        return String.format("%s://%s/services/Soap/u/%s", protocol, domain, info.getApiVersion());
     }
 }

@@ -24,7 +24,7 @@ public class ForceService {
     private static final String SANDBOX_LOGIN_DOMAIN = "test.salesforce.com";
     private static final long CONNECTION_TIMEOUT = TimeUnit.SECONDS.toMillis(10);
     private static final long READ_TIMEOUT = TimeUnit.SECONDS.toMillis(30);
-    public static final String DEFAULT_API_VERSION = "43.0";
+    public static final String DEFAULT_API_VERSION = "50.0";
     public static final int EXPIRE_AFTER_CREATE = 60;
     public static final int EXPIRE_STORE_SIZE = 16;
 
@@ -85,7 +85,6 @@ public class ForceService {
             partnerConfig.setAuthEndpoint(buildAuthEndpoint(info));
             connection = Connector.newConnection(partnerConfig);
         } else {
-
             try {
                 info.setSandbox(false);
                 partnerConfig.setAuthEndpoint(buildAuthEndpoint(info));

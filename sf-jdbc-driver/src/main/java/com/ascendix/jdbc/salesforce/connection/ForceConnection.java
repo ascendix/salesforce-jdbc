@@ -130,7 +130,6 @@ public class ForceConnection implements Connection {
     public Statement createStatement() {
         logger.info("[Conn] createStatement 1 IMPLEMENTED ");
         return new ForcePreparedStatement(this);
-
     }
 
     @Override
@@ -375,7 +374,6 @@ public class ForceConnection implements Connection {
 
     @Override
     public void setClientInfo(Properties properties) throws SQLClientInfoException {
-        // TODO Auto-generated method stub
         logger.info("[Conn] setClientInfo 2 IMPLEMENTED properties<>");
         properties.stringPropertyNames().forEach(propName -> clientInfo.setProperty(propName, properties.getProperty(propName)));
     }

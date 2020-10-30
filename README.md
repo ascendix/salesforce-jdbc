@@ -51,7 +51,7 @@ com.ascendix.jdbc.salesforce.ForceDriver
 ```
 jdbc:ascendix:salesforce://[;propertyName1=propertyValue1[;propertyName2=propertyValue2]...]
 ```
-There are two ways to connect to salesforce:
+There are two ways to connect to Salesforce:
 1. by using _user_ and _password_;
 2. by using _sessionId_.
 
@@ -69,11 +69,11 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
 | Property | Description |
 | --- | --- |
 | _user_ | Login username. |
-| _password_ |Login password associated with the specified username. <br>**Warning!** A password provided should contains your password and secret key joined in one string.|
+| _password_ | Login password is associated with the specified username. <br>**Warning!** A password provided should contain your password and secret key joined in one string.|
 | _sessionId_ | Unique ID associated with this session. |
 | _loginDomain_ | Top-level domain for a login request. <br>Default value is _login.salesforce.com_. <br>Set _test.salesforce.com_ value to use sandbox. |
 | _https_ | Switch to use HTTP protocol instead of HTTPS <br>Default value is _true_|
-| _api_ | Api version to use. <br>Default value is _43.0_. <br>Set _test.salesforce.com_ value to use sandbox. |
+| _api_ | Api version to use. <br>Default value is _50.0_. <br>Set _test.salesforce.com_ value to use sandbox. |
 | _client_ | Client Id to use. <br>Default value is empty.  |
 
 

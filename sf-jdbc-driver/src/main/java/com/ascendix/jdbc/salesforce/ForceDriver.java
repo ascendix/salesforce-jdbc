@@ -60,6 +60,7 @@ public class ForceDriver implements Driver {
             properties.putAll(connStringProps);
             ForceConnectionInfo info = new ForceConnectionInfo();
             info.setUserName(properties.getProperty("user"));
+            info.setClientName(properties.getProperty("client"));
             info.setPassword(properties.getProperty("password"));
             info.setClientName(properties.getProperty("client"));
             info.setSessionId(properties.getProperty("sessionId"));
@@ -102,7 +103,6 @@ public class ForceDriver implements Driver {
         }
         return defaultValue;
     }
-
 
     protected static Properties getConnStringProperties(String urlString) throws IOException {
         Properties result = new Properties();

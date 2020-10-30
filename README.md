@@ -1,5 +1,6 @@
 # sforce-jdbc [![Build Status](https://api.travis-ci.org/ascendix/salesforce-jdbc.svg?branch=master)](https://travis-ci.org/ascendix/salesforce-jdbc) [![Build Status](https://sonarcloud.io/api/project_badges/measure?project=com.ascendix.salesforce%3Asalesforce-jdbc&metric=alert_status)](https://sonarcloud.io/dashboard?id=com.ascendix.salesforce%3Asalesforce-jdbc)
-Salesforce JDBC driver allows Java programs to connect to a Salesforce data services using standard, database independent Java code. Is an open source JDBC driver written in Pure Java, and communicates over SOAP/HTTP(S) protocol.
+Salesforce JDBC driver allows Java programs to connect to Salesforce data services using standard, database independent Java code. It is an open source JDBC driver written in Pure Java, and communicates over SOAP/HTTP(S) protocol.
+
 The main purpose of the driver is to retrieve (only) data from Salesforce services for data analysis. Primary target platform for the driver usage is Eclipse BIRT engine.
 
 ## Supported Salesforce and Java versions
@@ -43,7 +44,7 @@ com.ascendix.jdbc.salesforce.ForceDriver
 ```
 jdbc:ascendix:salesforce://[;propertyName1=propertyValue1[;propertyName2=propertyValue2]...]
 ```
-There are two ways to connect to salesforce:
+There are two ways to connect to Salesforce:
 1. by using _user_ and _password_;
 2. by using _sessionId_.
 
@@ -61,7 +62,7 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
 | Property | Description |
 | --- | --- |
 | _user_ | Login username. |
-| _password_ |Login password associated with the specified username. <br>**Warning!** A password provided should contains your password and secret key joined in one string.|
+| _password_ | Login password is associated with the specified username. <br>**Warning!** A password provided should contain your password and secret key joined in one string.|
 | _sessionId_ | Unique ID associated with this session. |
 | _loginDomain_ | Top-level domain for a login request. <br>Default value is _login.salesforce.com_. <br>Set _test.salesforce.com_ value to use sandbox. |
 | _https_ | Switch to use HTTP protocol instead of HTTPS <br>Default value is _true_|

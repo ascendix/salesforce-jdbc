@@ -74,7 +74,6 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
 1. Queries support native SOQL;
 2. Nested queries are supported;
 3. Request caching support on local drive. Caching supports 2 modes: global and session. Global mode means that the cached result will be accessible for all system users for certain JVM session. Session cache mode works for each Salesforce connection session separately. Both modes cache stores request result while JVM still running but no longer than for 1 hour. The cache mode can be enabled with a prefix of SOQL query. How to use:
-=======
   * Global cache mode:
   ```SQL
   CACHE GLOBAL SELECT Id, Name FROM Account

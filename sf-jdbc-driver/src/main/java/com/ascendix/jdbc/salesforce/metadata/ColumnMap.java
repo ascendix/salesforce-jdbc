@@ -18,6 +18,11 @@ public class ColumnMap<K, V> implements Serializable {
         return value;
     }
 
+    public ColumnMap<K, V> add(K key, V value) {
+        put(key, value);
+        return this;
+    }
+
     public V get(K key) {
         int index = columnNames.indexOf(key);
         return index != -1 ? values.get(index) : null;
@@ -29,5 +34,17 @@ public class ColumnMap<K, V> implements Serializable {
      */
     public V getByIndex(int index) {
         return values.get(index - 1);
+    }
+
+    public int size() {
+        return columnNames.size();
+    }
+
+    public ArrayList<K> getColumnNames() {
+        return columnNames;
+    }
+
+    public ArrayList<V> getValues() {
+        return values;
     }
 }

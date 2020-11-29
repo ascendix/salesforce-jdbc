@@ -50,6 +50,7 @@ public class ForceConnection implements Connection {
 
     @Override
     public PreparedStatement prepareStatement(String soql) {
+        logger.info("[Conn] prepareStatement IMPLEMENTED "+soql);
         return new ForcePreparedStatement(this, soql);
     }
 
@@ -77,7 +78,7 @@ public class ForceConnection implements Connection {
     @Override
     public Statement createStatement() {
         logger.info("[Conn] createStatement 1 IMPLEMENTED ");
-        return null;
+        return new ForcePreparedStatement(this);
     }
 
     @Override
@@ -100,26 +101,22 @@ public class ForceConnection implements Connection {
 
     @Override
     public boolean getAutoCommit() throws SQLException {
-        // TODO Auto-generated method stub
-        return false;
+        return true;
     }
 
     @Override
     public void commit() throws SQLException {
-        // TODO Auto-generated method stub
-
+        logger.info("[Conn] commit NOT_IMPLEMENTED ");
     }
 
     @Override
     public void rollback() throws SQLException {
-        // TODO Auto-generated method stub
-
+        logger.info("[Conn] rollback NOT_IMPLEMENTED ");
     }
 
     @Override
     public void close() throws SQLException {
-        // TODO Auto-generated method stub
-
+        logger.info("[Conn] close NOT_IMPLEMENTED ");
     }
 
     @Override
@@ -143,13 +140,13 @@ public class ForceConnection implements Connection {
     @Override
     public void setCatalog(String catalog) throws SQLException {
         // TODO Auto-generated method stub
-
+        logger.info("[Conn] setCatalog NOT_IMPLEMENTED set to '"+catalog+"'");
     }
 
     @Override
     public String getCatalog() throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        logger.info("[Conn] getCatalog IMPLEMENTED returning "+ForceDatabaseMetaData.DEFAULT_CATALOG);
+        return ForceDatabaseMetaData.DEFAULT_CATALOG;
     }
 
     @Override
@@ -178,26 +175,26 @@ public class ForceConnection implements Connection {
 
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency) throws SQLException {
-        Logger.getLogger(SF_JDBC_DRIVER_NAME).info(Object.class.getEnclosingMethod().getName());
-        return null;
+        logger.info("[Conn] createStatement 2 IMPLEMENTED");
+        return new ForcePreparedStatement(this);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
             throws SQLException {
-        Logger.getLogger(SF_JDBC_DRIVER_NAME).info(Object.class.getEnclosingMethod().getName());
-        return null;
+        logger.info("[Conn] prepareStatement 1 IMPLEMENTED "+sql);
+        return new ForcePreparedStatement(this, sql);
     }
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency) throws SQLException {
-        Logger.getLogger(SF_JDBC_DRIVER_NAME).info(Object.class.getEnclosingMethod().getName());
+        logger.info("[Conn] prepareCall NOT_IMPLEMENTED "+sql);
         return null;
     }
 
     @Override
     public Map<String, Class<?>> getTypeMap() throws SQLException {
-        Logger.getLogger(SF_JDBC_DRIVER_NAME).info(Object.class.getEnclosingMethod().getName());
+        logger.info("[Conn] getTypeMap NOT_IMPLEMENTED ");
         return null;
     }
 
@@ -233,52 +230,52 @@ public class ForceConnection implements Connection {
 
     @Override
     public void rollback(Savepoint savepoint) throws SQLException {
-        // TODO Auto-generated method stub
+        logger.info("[Conn] rollback Savepoint NOT_IMPLEMENTED");
 
     }
 
     @Override
     public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-        // TODO Auto-generated method stub
+        logger.info("[Conn] releaseSavepoint NOT_IMPLEMENTED");
 
     }
 
     @Override
     public Statement createStatement(int resultSetType, int resultSetConcurrency, int resultSetHoldability)
             throws SQLException {
-        Logger.getLogger(SF_JDBC_DRIVER_NAME).info(Object.class.getEnclosingMethod().getName());
-        return null;
+        logger.info("[Conn] createStatement 3 NOT_IMPLEMENTED");
+        return new ForcePreparedStatement(this);
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency,
                                               int resultSetHoldability) throws SQLException {
-        Logger.getLogger(SF_JDBC_DRIVER_NAME).info(Object.class.getEnclosingMethod().getName());
+        logger.info("[Conn] prepareStatement 2 NOT_IMPLEMENTED "+sql );
         return null;
     }
 
     @Override
     public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency,
                                          int resultSetHoldability) throws SQLException {
-        Logger.getLogger(SF_JDBC_DRIVER_NAME).info(Object.class.getEnclosingMethod().getName());
+        logger.info("[Conn] prepareCall 2 NOT_IMPLEMENTED "+sql );
         return null;
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
-        Logger.getLogger(SF_JDBC_DRIVER_NAME).info(Object.class.getEnclosingMethod().getName());
+        logger.info("[Conn] prepareStatement 3 NOT_IMPLEMENTED "+sql );
         return null;
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
-        Logger.getLogger(SF_JDBC_DRIVER_NAME).info(Object.class.getEnclosingMethod().getName());
+        logger.info("[Conn] prepareStatement 4 NOT_IMPLEMENTED "+sql );
         return null;
     }
 
     @Override
     public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
-        Logger.getLogger(SF_JDBC_DRIVER_NAME).info(Object.class.getEnclosingMethod().getName());
+        logger.info("[Conn] prepareStatement 5 NOT_IMPLEMENTED "+sql );
         return null;
     }
 
@@ -309,7 +306,8 @@ public class ForceConnection implements Connection {
     @Override
     public boolean isValid(int timeout) throws SQLException {
         // TODO Auto-generated method stub
-        return false;
+        logger.info("[Conn] isValid NOT_IMPLEMENTED ");
+        return true;
     }
 
     @Override
@@ -352,7 +350,7 @@ public class ForceConnection implements Connection {
     @Override
     public void setSchema(String schema) throws SQLException {
         // TODO Auto-generated method stub
-
+        logger.info("[Conn] setSchema NOT_IMPLEMENTED ");
     }
 
     @Override

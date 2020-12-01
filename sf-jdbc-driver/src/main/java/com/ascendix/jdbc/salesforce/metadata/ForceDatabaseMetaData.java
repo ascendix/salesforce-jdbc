@@ -1,11 +1,10 @@
 package com.ascendix.jdbc.salesforce.metadata;
 
+import com.ascendix.jdbc.salesforce.ForceDriver;
 import com.ascendix.jdbc.salesforce.connection.ForceConnection;
 import com.ascendix.jdbc.salesforce.delegates.PartnerService;
 import com.ascendix.jdbc.salesforce.resultset.CachedResultSet;
 import com.ascendix.jdbc.salesforce.statement.ForcePreparedStatement;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -1390,6 +1389,24 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
     public static void main(String[] args) throws SQLException {
         ForceDatabaseMetaData metadata = new ForceDatabaseMetaData();
         System.out.println(metadata.getDriverName() + " version "+metadata.getDriverVersion()+ " for API "+metadata.getDatabaseProductVersion());
+
+        if (args.length > 0) {
+            System.out.println("Test the tables from the url ");
+            ForceDriver driver = new ForceDriver();
+            ForceConnection connection = (ForceConnection)driver.connect(args[0], new Properties());
+
+            ForceDatabaseMetaData metaData = new ForceDatabaseMetaData(connection);
+            ResultSet schemas = metaData.getSchemas();
+            ResultSet catalogs = metaData.getCatalogs();
+            String[] types = null;
+            ResultSet tables = metaData.getTables("catalog", "", "%", types);
+            int count = 0;
+            while(tables.next()) {
+                System.out.println(" "+tables.getString("TABLE_NAME"));
+                count++;
+            }
+            System.out.println(count+" Tables total");
+        }
     }
 
 

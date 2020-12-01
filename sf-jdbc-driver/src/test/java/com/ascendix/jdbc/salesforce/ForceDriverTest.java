@@ -123,7 +123,9 @@ public class ForceDriverTest {
     @Test
     @Ignore
     public void testConnect_getTables() throws  SQLException {
-        ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@localorg.localhost.internal.salesforce.com:6109?https=false&api=48.0", new Properties());
+        ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@spuliaiev-wsm1.internal.salesforce.com:6109?https=false&api=50.0", new Properties());
+//        ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@localorg.localhost.internal.salesforce.com:6109?https=false&api=50.0", new Properties());
+//        ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://demo@superstore.com:|4j!d12MBV@superstore.com:6109?https=false&api=51.0", new Properties());
         assertNotNull(connection);
 
         ForceDatabaseMetaData metaData = new ForceDatabaseMetaData(connection);

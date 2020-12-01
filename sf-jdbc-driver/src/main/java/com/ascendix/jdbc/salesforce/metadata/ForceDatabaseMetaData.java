@@ -38,6 +38,11 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
         this.partnerService = new PartnerService(connection.getPartnerConnection());
     }
 
+    private ForceDatabaseMetaData() {
+        this.connection = connection;
+        this.partnerService = null;
+    }
+
     @Override
     public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) {
         logger.info("[Meta] getTables catalog="+catalog+" schema="+schemaPattern+" table="+tableNamePattern);
@@ -422,12 +427,12 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 
     @Override
     public String getDatabaseProductName() throws SQLException {
-        return "Ascendix JDBC driver for Salesforce";
+        return "Salesforce";
     }
 
     @Override
     public String getDatabaseProductVersion() throws SQLException {
-        return "51";
+        return String.valueOf(getDatabaseMajorVersion());
     }
 
     @Override
@@ -437,7 +442,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 
     @Override
     public String getDriverVersion() throws SQLException {
-        return "1.2.6.02";
+        return getDriverMajorVersion()+"."+getDriverMinorVersion()+".6.03";
     }
 
     @Override
@@ -1285,7 +1290,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 
     @Override
     public int getDatabaseMajorVersion() throws SQLException {
-        return 39;
+        return 51;
     }
 
     @Override
@@ -1381,5 +1386,11 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
         // TODO Auto-generated method stub
         return false;
     }
+
+    public static void main(String[] args) throws SQLException {
+        ForceDatabaseMetaData metadata = new ForceDatabaseMetaData();
+        System.out.println(metadata.getDriverName() + " version "+metadata.getDriverVersion()+ " for API "+metadata.getDatabaseProductVersion());
+    }
+
 
 }

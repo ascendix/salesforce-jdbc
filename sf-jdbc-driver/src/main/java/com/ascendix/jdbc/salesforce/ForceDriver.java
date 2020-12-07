@@ -18,6 +18,7 @@ import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,6 +27,9 @@ import java.util.regex.Pattern;
 @Slf4j
 public class ForceDriver implements Driver {
 
+    private static final String SF_JDBC_DRIVER_NAME = "SF JDBC driver";
+    private static final Logger logger = Logger.getLogger(SF_JDBC_DRIVER_NAME);
+
     private static final String ACCEPTABLE_URL = "jdbc:ascendix:salesforce";
     private static final Pattern URL_PATTERN = Pattern.compile("\\A" + ACCEPTABLE_URL + "://(.*)");
     private static final Pattern URL_HAS_AUTHORIZATION_SEGMENT = Pattern.compile("\\A" + ACCEPTABLE_URL + "://([^:]+):([^@]+)@([^?]*)([?](.*))?");
@@ -33,6 +37,7 @@ public class ForceDriver implements Driver {
 
     static {
         try {
+            logger.info("[ForceDriver] registration");
             DriverManager.registerDriver(new ForceDriver());
         } catch (Exception e) {
             throw new RuntimeException("Failed register ForceDriver: " + e.getMessage(), e);
@@ -58,6 +63,7 @@ public class ForceDriver implements Driver {
             info.setUserName(properties.getProperty("user"));
             info.setClientName(properties.getProperty("client"));
             info.setPassword(properties.getProperty("password"));
+            info.setClientName(properties.getProperty("client"));
             info.setSessionId(properties.getProperty("sessionId"));
             info.setSandbox(resolveSandboxProperty(properties));
             info.setHttps(resolveBooleanProperty(properties, "https", true));
@@ -65,7 +71,39 @@ public class ForceDriver implements Driver {
             info.setLoginDomain(resolveStringProperty(properties, "loginDomain", ForceService.DEFAULT_LOGIN_DOMAIN));
 
             PartnerConnection partnerConnection = ForceService.createPartnerConnection(info);
-            return new ForceConnection(partnerConnection);
+            return new ForceConnection(partnerConnection, (newUrl, userName, userPassword) -> {
+                logger.info("[ForceDriver] relogin helper ");
+                Properties newConnStringProps;
+                try {
+                    newConnStringProps = getConnStringProperties(newUrl);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "[ForceDriver] relogin helper failed - url parsing error", e);
+                    return null;
+
+                }
+                Properties newProperties = new Properties();
+                properties.putAll(newConnStringProps);
+
+                ForceConnectionInfo newInfo = new ForceConnectionInfo();
+                newInfo.setUserName(userName);
+                newInfo.setPassword(userPassword);
+                newInfo.setClientName(newProperties.getProperty("client"));
+                newInfo.setSessionId(newProperties.getProperty("sessionId"));
+                newInfo.setSandbox(resolveSandboxProperty(newProperties));
+                newInfo.setHttps(resolveBooleanProperty(newProperties, "https", true));
+                newInfo.setApiVersion(resolveStringProperty(newProperties, "api", ForceService.DEFAULT_API_VERSION));
+                newInfo.setLoginDomain(resolveStringProperty(newProperties, "loginDomain", ForceService.DEFAULT_LOGIN_DOMAIN));
+
+                PartnerConnection newPartnerConnection;
+                try {
+                    newPartnerConnection = ForceService.createPartnerConnection(newInfo);
+                    logger.log(Level.WARNING, "[ForceDriver] relogin helper success="+(newPartnerConnection != null));
+                    return newPartnerConnection;
+                } catch (ConnectionException e) {
+                    logger.log(Level.WARNING, "[ForceDriver] relogin helper failed", e);
+                    return null;
+                }
+            });
         } catch (ConnectionException | IOException e) {
             throw new SQLException(e);
         }
@@ -99,8 +137,7 @@ public class ForceDriver implements Driver {
         return defaultValue;
     }
 
-
-    protected Properties getConnStringProperties(String urlString) throws IOException {
+    protected static Properties getConnStringProperties(String urlString) throws IOException {
         Properties result = new Properties();
         String urlProperties = null;
 

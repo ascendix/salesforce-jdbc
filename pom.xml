@@ -33,7 +33,7 @@
         <maven-assembly-plugin.version>3.1.0</maven-assembly-plugin.version>
         <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
         <salesforce-soql-parser.version>2.0</salesforce-soql-parser.version>
-        <force-partner-api.version>50.0.0</force-partner-api.version>
+        <force-partner-api.version>51.0.0</force-partner-api.version>
         <mapdb.version>3.0.5</mapdb.version>
         <antlr.version>3.5.2</antlr.version>
         <opencsv.version>4.2</opencsv.version>

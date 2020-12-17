@@ -130,6 +130,17 @@ CONNECT admin@OtherOrg.com/123456
     ![image](/docs/Autocomplete-SOQL.png)
   
 
+## In case of issues with the WSDL
+
+Steps to update the partners.wsdl
+
+1. Get and build https://github.com/forcedotcom/wsc
+2. Run command:
+   
+   `java -jar target/force-wsc-50.0.0-uber.jar blt/app/main/core/shared/submodules/wsdl/src/main/wsdl/partner.wsdl sforce-partner.jar`
+3. Copy the com.sforce.soap to the driver
+
+
 ### Sponsors
 [Ascendix Technologies Inc.](https://ascendix.com/) <img src="http://ww1.prweb.com/prfiles/2006/12/12/490667/ascendixlogo.jpg" width=100 align="right"/>
 

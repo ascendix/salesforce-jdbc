@@ -7,10 +7,15 @@ import com.sforce.soap.partner.PartnerConnection;
 import com.sforce.ws.ConnectionException;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.DriverManager;
@@ -39,6 +44,7 @@ public class ForceDriver implements Driver {
         try {
             logger.info("[ForceDriver] registration");
             DriverManager.registerDriver(new ForceDriver());
+
         } catch (Exception e) {
             throw new RuntimeException("Failed register ForceDriver: " + e.getMessage(), e);
         }
@@ -67,6 +73,9 @@ public class ForceDriver implements Driver {
             info.setSessionId(properties.getProperty("sessionId"));
             info.setSandbox(resolveSandboxProperty(properties));
             info.setHttps(resolveBooleanProperty(properties, "https", true));
+            if (resolveBooleanProperty(properties, "insecurehttps", false)) {
+                HttpsTrustManager.allowAllSSL();
+            }
             info.setApiVersion(resolveStringProperty(properties, "api", ForceService.DEFAULT_API_VERSION));
             info.setLoginDomain(resolveStringProperty(properties, "loginDomain", ForceService.DEFAULT_LOGIN_DOMAIN));
 
@@ -74,23 +83,27 @@ public class ForceDriver implements Driver {
             return new ForceConnection(partnerConnection, (newUrl, userName, userPassword) -> {
                 logger.info("[ForceDriver] relogin helper ");
                 Properties newConnStringProps;
-                try {
-                    newConnStringProps = getConnStringProperties(newUrl);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "[ForceDriver] relogin helper failed - url parsing error", e);
-                    return null;
-
-                }
                 Properties newProperties = new Properties();
-                properties.putAll(newConnStringProps);
-
+                newProperties.putAll(properties);
                 ForceConnectionInfo newInfo = new ForceConnectionInfo();
+                if (newUrl != null) {
+                    try {
+                        newConnStringProps = getConnStringProperties(newUrl);
+                        newProperties.putAll(newConnStringProps);
+                    } catch (Exception e) {
+                        logger.log(Level.WARNING, "[ForceDriver] relogin helper failed - url parsing error", e);
+                    }
+                }
+
                 newInfo.setUserName(userName);
                 newInfo.setPassword(userPassword);
                 newInfo.setClientName(newProperties.getProperty("client"));
                 newInfo.setSessionId(newProperties.getProperty("sessionId"));
                 newInfo.setSandbox(resolveSandboxProperty(newProperties));
                 newInfo.setHttps(resolveBooleanProperty(newProperties, "https", true));
+                if (resolveBooleanProperty(newProperties, "insecurehttps", false)) {
+                    HttpsTrustManager.allowAllSSL();
+                }
                 newInfo.setApiVersion(resolveStringProperty(newProperties, "api", ForceService.DEFAULT_API_VERSION));
                 newInfo.setLoginDomain(resolveStringProperty(newProperties, "loginDomain", ForceService.DEFAULT_LOGIN_DOMAIN));
 
@@ -202,6 +215,55 @@ public class ForceDriver implements Driver {
     @Override
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
         throw new SQLFeatureNotSupportedException();
+    }
+
+    public static class HttpsTrustManager implements X509TrustManager {
+        private static TrustManager[] trustManagers;
+        private static final X509Certificate[] _AcceptedIssuers = new X509Certificate[]{};
+
+        @Override
+        public void checkClientTrusted(
+                X509Certificate[] x509Certificates, String s)
+                throws java.security.cert.CertificateException {
+
+        }
+
+        @Override
+        public void checkServerTrusted(
+                X509Certificate[] x509Certificates, String s)
+                throws java.security.cert.CertificateException {
+
+        }
+
+        public boolean isClientTrusted(X509Certificate[] chain) {
+            return true;
+        }
+
+        public boolean isServerTrusted(X509Certificate[] chain) {
+            return true;
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return _AcceptedIssuers;
+        }
+
+        public static void allowAllSSL() {
+            HttpsURLConnection.setDefaultHostnameVerifier((arg0, arg1) -> true);
+
+            if (trustManagers == null) {
+                trustManagers = new TrustManager[]{new HttpsTrustManager()};
+            }
+
+            try {
+                SSLContext context = SSLContext.getInstance("TLS");
+                context.init(null, trustManagers, new SecureRandom());
+                HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
+            } catch (NoSuchAlgorithmException | KeyManagementException e) {
+                e.printStackTrace();
+            }
+
+        }
     }
 
 }

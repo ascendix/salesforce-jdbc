@@ -14,7 +14,7 @@ These issues were fixed in the current version in this fork.
 The current version of the driver should be compatible with **Salesforce Partner API version 39.0 and higher** and **Java 8**.
 
 ## Get the driver
-Download the driver [here](https://spuliaiev-sfdc.github.io/salesforce-jdbc/deliverables/sf-jdbc-driver-1.2-SNAPSHOT-jar-with-dependencies.jar)
+Download the driver [here](https://spuliaiev-sfdc.github.io/salesforce-jdbc/deliverables/sf-jdbc-driver-1.3.0-SNAPSHOT-jar-with-dependencies.jar)
 
 
 ## With Maven
@@ -75,6 +75,7 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
 | _https_ | Switch to use HTTP protocol instead of HTTPS <br>Default value is _true_|
 | _api_ | Api version to use. <br>Default value is _50.0_. <br>Set _test.salesforce.com_ value to use sandbox. |
 | _client_ | Client Id to use. <br>Default value is empty.  |
+| _insecurehttps_ | Allow invalid certificates for SSL.  |
 
 
 ## Supported features
@@ -140,6 +141,35 @@ Steps to update the partners.wsdl
    `java -jar target/force-wsc-50.0.0-uber.jar blt/app/main/core/shared/submodules/wsdl/src/main/wsdl/partner.wsdl sforce-partner.jar`
 3. Copy the com.sforce.soap to the driver
 
+## SOQL Parser
+
+This project uses a bit modified version of MuleSoft SOQL Parser which also supports quotes around field names.
+It could be obtained from here:  https://github.com/spuliaiev-sfdc/salesforce-soql-parser
+
+
+## Version History
+
+### 1.3.0.1
+   Insecure HTTPS - disabling the SSL Certificate verification    
+
+### 1.2.6.03
+   Update force-partner-api to 51.0.0    
+
+### 1.2.6.02
+   Fields for SubSelects aliases
+
+   Returning flat resultset for field
+
+### 1.2.6.01
+   Update force-partner-api to 50.0.0
+
+   Implement parameters:
+* loginDomain
+* client
+* https
+* api 
+
+   Implement missing JDBC methods which are required for JetBrains IntelliJ IDE
 
 ### Sponsors
 [Ascendix Technologies Inc.](https://ascendix.com/) <img src="http://ww1.prweb.com/prfiles/2006/12/12/490667/ascendixlogo.jpg" width=100 align="right"/>

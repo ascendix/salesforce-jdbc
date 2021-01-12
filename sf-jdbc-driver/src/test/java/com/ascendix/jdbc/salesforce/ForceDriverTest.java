@@ -78,7 +78,7 @@ public class ForceDriverTest {
         ResultSet results = select_id_from_account1.executeQuery();
         System.out.println(renderResultSet(results));
 
-        PreparedStatement reconnect = connection.prepareStatement("CONNECT USER admin@15542148823767.com IDENTIFIED by \"123456\"");
+        PreparedStatement reconnect = connection.prepareStatement("CONNECT USER dev@local.org.sbx01part IDENTIFIED by \"123456\"");
         results = reconnect.executeQuery();
         System.out.println(renderResultSet(results));
         assertNotNull(results);
@@ -123,7 +123,9 @@ public class ForceDriverTest {
     @Test
     @Ignore
     public void testConnect_getTables() throws  SQLException {
-        ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@spuliaiev-wsm1.internal.salesforce.com:6109?https=false&api=51.0", new Properties());
+//        ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://admin@serega.org:Sergey251084@sprystupa-ltm.internal.salesforce.com:6101?https=true&api=52.0&insecurehttps=true", new Properties());
+        ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://admin@serega.org:Sergey251084@sprystupa-wsm.internal.salesforce.com:7443?https=true&api=52.0&insecurehttps=true", new Properties());
+//        ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@spuliaiev-wsm1.internal.salesforce.com:6109?https=false&api=51.0", new Properties());
 //        ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@localorg.localhost.internal.salesforce.com:6109?https=false&api=50.0", new Properties());
 //        ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://demo@superstore.com:|4j!d12MBV@superstore.com:6109?https=false&api=51.0", new Properties());
         assertNotNull(connection);
@@ -183,6 +185,21 @@ public class ForceDriverTest {
         // 🙉𥿃🙂😂𣻰😯🗸🐌
 
         ResultSet resultSet = statement.executeQuery("select Id, Name from Account where Name like '\uD83D\uDE49\uD857\uDFC3\uD83D\uDE42\uD83D\uDE02\uD84F\uDEF0\uD83D\uDE2F\uD83D\uDDF8\uD83D\uDC0C'");
+        assertNotNull(resultSet);
+        assertEquals("One record should be present", resultSet.first());
+        resultSet.getMetaData();
+    }
+
+    @Test
+    @Ignore
+    public void testConnect_querySelectWithQuotes() throws  SQLException {
+        ForceConnection connection = (ForceConnection)driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@localorg.localhost.internal.salesforce.com:6109?https=false&api=51.0", new Properties());
+        assertNotNull(connection);
+
+        Statement statement = connection.createStatement();
+        assertNotNull(statement);
+
+        ResultSet resultSet = statement.executeQuery("select \"Id\", \"IsDeleted\", \"Name\" from Account");
         assertNotNull(resultSet);
         assertEquals("One record should be present", resultSet.first());
         resultSet.getMetaData();

@@ -441,7 +441,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 
     @Override
     public String getDriverVersion() throws SQLException {
-        return getDriverMajorVersion()+"."+getDriverMinorVersion()+".6.03";
+        return getDriverMajorVersion()+"."+getDriverMinorVersion()+".0.1";
     }
 
     @Override
@@ -451,7 +451,7 @@ public class ForceDatabaseMetaData implements DatabaseMetaData, Serializable {
 
     @Override
     public int getDriverMinorVersion() {
-        return 2;
+        return 3;
     }
 
     @Override

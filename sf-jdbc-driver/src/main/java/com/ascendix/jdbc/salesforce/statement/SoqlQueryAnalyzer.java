@@ -49,6 +49,7 @@ public class SoqlQueryAnalyzer {
         @Override
         public Void visitFieldSpec(FieldSpec fieldSpec) {
             String name = fieldSpec.getFieldName();
+
             String alias = fieldSpec.getAlias() != null ? fieldSpec.getAlias() : name;
             // If Object Name specified - verify it is not the same as SOQL root entity
             String objectPrefix = fieldSpec.getObjectPrefixNames().size() > 0 ? fieldSpec.getObjectPrefixNames().get(0) : null;

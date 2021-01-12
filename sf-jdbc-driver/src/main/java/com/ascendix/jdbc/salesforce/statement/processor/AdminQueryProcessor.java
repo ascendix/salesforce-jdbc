@@ -54,7 +54,7 @@ public class AdminQueryProcessor {
             matcherLogin = LOGIN_COMMAND_ORA.matcher(soqlQuery);
         }
         if (matcherLogin.matches()) {
-            resultSet.log("Admin query: CONNECT");
+            resultSet.log("Admin query: CONNECT ATTEMPT");
             String userName = matcherLogin.group("username");
             String userPass = matcherLogin.group("userpass");
             String url = matcherLogin.group("url");

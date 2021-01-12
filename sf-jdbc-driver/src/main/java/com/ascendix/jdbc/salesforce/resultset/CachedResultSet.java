@@ -25,13 +25,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 
 public class CachedResultSet implements ResultSet, Serializable {
@@ -39,25 +33,30 @@ public class CachedResultSet implements ResultSet, Serializable {
     private static final long serialVersionUID = 1L;
 
     private transient Integer index;
-    private List<ColumnMap<String, Object>> rows;
+    private List<ColumnMap<String, Object>> rows = new ArrayList<>();
     private ResultSetMetaData metadata;
     private SQLWarning warningsChain;
 
     public CachedResultSet(List<ColumnMap<String, Object>> rows) {
-        this.rows = rows;
+        this.rows = new ArrayList(rows);
     }
 
     public CachedResultSet(List<ColumnMap<String, Object>> rows, ResultSetMetaData metadata) {
-        this(rows);
+        this(new ArrayList(rows));
+        this.metadata = metadata;
+    }
+
+    public CachedResultSet(ResultSetMetaData metadata) {
+        this(new ArrayList());
         this.metadata = metadata;
     }
 
     public CachedResultSet(ColumnMap<String, Object> singleRow) {
-        this(Arrays.asList(singleRow));
+        this(new ArrayList(Arrays.asList(singleRow)));
     }
 
     public CachedResultSet(ColumnMap<String, Object> singleRow, ResultSetMetaData metadata) {
-        this(Arrays.asList(singleRow), metadata);
+        this(new ArrayList(Arrays.asList(singleRow)), metadata);
     }
 
     public Object getObject(String columnName) throws SQLException {

@@ -6,7 +6,8 @@
     <parent>
         <artifactId>salesforce-jdbc</artifactId>
         <groupId>com.ascendix.salesforce</groupId>
-        <version>1.2-SNAPSHOT</version>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>sf-jdbc-driver</artifactId>
 
@@ -31,6 +32,10 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-io</artifactId>
         </dependency>
         <dependency>
             <groupId>org.antlr</groupId>

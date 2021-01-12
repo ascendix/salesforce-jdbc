@@ -13,7 +13,7 @@ public class CommandLogCachedResultSet extends CachedResultSet {
     private static ColumnMap<String, Object> DEFAULT_COLUMN_MAP = new ColumnMap<String, Object>().add(LOG_COLUMN,"Value");
 
     public CommandLogCachedResultSet() {
-        super(new ColumnMap<>());
+        super(ForcePreparedStatement.dummyMetaData(DEFAULT_COLUMN_MAP));
     }
 
     public CommandLogCachedResultSet(List<String> commandLog) {

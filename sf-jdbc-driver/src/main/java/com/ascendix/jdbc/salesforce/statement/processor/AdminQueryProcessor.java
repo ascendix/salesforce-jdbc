@@ -7,6 +7,7 @@ import com.ascendix.jdbc.salesforce.statement.ForcePreparedStatement;
 
 import java.io.IOException;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,7 +44,7 @@ public class AdminQueryProcessor {
         return false;
     }
 
-    public static ResultSet processQuery(ForcePreparedStatement statement, String soqlQuery, PartnerService partnerService) {
+    public static ResultSet processQuery(ForcePreparedStatement statement, String soqlQuery, PartnerService partnerService) throws SQLException {
         CommandLogCachedResultSet resultSet = new CommandLogCachedResultSet();
         if (soqlQuery == null || soqlQuery.trim().length() == 0) {
             resultSet.log("No SOQL or ADMIN query found");
@@ -97,6 +98,7 @@ public class AdminQueryProcessor {
                 }
             } catch (Exception e) {
                 resultSet.log("Admin query: CONNECTION ERROR as " + logUserName + " to " + logHost + " : " +e.getMessage());
+                throw new SQLException("CONNECTION ERROR as " + logUserName + " to " + logHost + " : " +e.getMessage(), "08000", e);
             }
         }
         return resultSet;

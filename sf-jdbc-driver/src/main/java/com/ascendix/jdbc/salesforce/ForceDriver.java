@@ -4,7 +4,7 @@ import com.ascendix.jdbc.salesforce.connection.ForceConnection;
 import com.ascendix.jdbc.salesforce.connection.ForceConnectionInfo;
 import com.ascendix.jdbc.salesforce.connection.ForceService;
 import com.sforce.soap.partner.PartnerConnection;
-import com.sforce.soap.partner.fault.UnexpectedErrorFault;
+import com.sforce.soap.partner.fault.ApiFault;
 import com.sforce.ws.ConnectionException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -121,7 +121,7 @@ public class ForceDriver implements Driver {
                     newPartnerConnection = ForceService.createPartnerConnection(newInfo);
                     logger.log(Level.WARNING, "[ForceDriver] relogin helper success="+(newPartnerConnection != null));
                     return newPartnerConnection;
-                } catch (UnexpectedErrorFault e) {
+                } catch (ApiFault e) {
                     logger.log(Level.WARNING, "[ForceDriver] relogin helper failed "+ e.getMessage(), e);
                     throw new ConnectionException("Relogin failed ("+e.getExceptionCode()+") "+ e.getExceptionMessage(), e);
                 } catch (ConnectionException e) {

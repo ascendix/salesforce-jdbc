@@ -163,6 +163,28 @@ public class ForceDriverTest {
         }
     }
 
+    @Test
+    @Ignore
+    public void testConnect_ReconnectToHost_Failed() throws  SQLException {
+        Connection connection = driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@spuliaiev-wsm1.internal.salesforce.com:7357?https=false&api=48.0", new Properties());
+        assertNotNull(connection);
+        PreparedStatement select_id_from_account1 = connection.prepareStatement("select Id, Name from Organization");
+        ResultSet results = select_id_from_account1.executeQuery();
+        System.out.println(renderResultSet(results));
+
+        try {
+            PreparedStatement reconnect3 = connection.prepareStatement("CONNECT TO  " +
+                    " https://ap1.stmpa.stm.salesforce.com "+
+                    " USER CollectionOwner23@RecColl04.org IDENTIFIED by \"test12345\"");
+            reconnect3.executeQuery();
+            assertFalse("Should fail on the execution astep as user is wrong", true);
+        } catch (SQLException e) {
+            assertEquals("Expected message is wrong",
+                    "CONNECTION ERROR as CollectionOwner23@RecColl04.org to ap1.stmpa.stm.salesforce.com : Relogin failed (INVALID_LOGIN) Invalid username, password, security token; or user locked out.",
+                    e.getMessage());
+        }
+    }
+
 
     private String renderResultSet(ResultSet results) throws SQLException {
         StringBuilder out = new StringBuilder();

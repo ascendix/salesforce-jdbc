@@ -78,7 +78,7 @@ public class ForceDriverTest {
         ResultSet results = select_id_from_account1.executeQuery();
         System.out.println(renderResultSet(results));
 
-        PreparedStatement reconnect = connection.prepareStatement("CONNECT USER dev@local.org.sbx01part IDENTIFIED by \"123456\"");
+        PreparedStatement reconnect = connection.prepareStatement("CONNECT USER admin@161866466774053.com IDENTIFIED by \"123456\"");
         results = reconnect.executeQuery();
         System.out.println(renderResultSet(results));
         assertNotNull(results);
@@ -87,6 +87,82 @@ public class ForceDriverTest {
         System.out.println(renderResultSet(results));
         assertNotNull(results);
     }
+
+    @Test
+    @Ignore
+    public void testConnect_ReconnectToHost_FullJDBC() throws  SQLException {
+        Connection connection = driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@spuliaiev-wsm1.internal.salesforce.com:7357?https=false&api=48.0", new Properties());
+        assertNotNull(connection);
+        PreparedStatement select_id_from_account1 = connection.prepareStatement("select Id, Name from Organization");
+        ResultSet results = select_id_from_account1.executeQuery();
+        System.out.println(renderResultSet(results));
+
+        try {
+            PreparedStatement reconnect = connection.prepareStatement("CONNECT TO  " +
+                    " jdbc:ascendix:salesforce://admin@RecColl03.org:test12345@ap1.stmpa.stm.salesforce.com?https=true&api=51.0 ");
+            results = reconnect.executeQuery();
+            System.out.println(renderResultSet(results));
+            assertNotNull(results);
+            PreparedStatement select_id_from_account2 = connection.prepareStatement("select Id, Name from Organization");
+            results = select_id_from_account2.executeQuery();
+            System.out.println(renderResultSet(results));
+            assertNotNull(results);
+        } catch (Exception e) {
+            throw new SQLException("Failed to log in into RecColl03 - using full jdbc URL", e);
+        }
+    }
+
+    @Test
+    @Ignore
+    public void testConnect_ReconnectToHost_FullJDBC_WithUser() throws  SQLException {
+        Connection connection = driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@spuliaiev-wsm1.internal.salesforce.com:7357?https=false&api=48.0", new Properties());
+        assertNotNull(connection);
+        PreparedStatement select_id_from_account1 = connection.prepareStatement("select Id, Name from Organization");
+        ResultSet results = select_id_from_account1.executeQuery();
+        System.out.println(renderResultSet(results));
+
+        try {
+            PreparedStatement reconnect3 = connection.prepareStatement("CONNECT TO  " +
+                    " jdbc:ascendix:salesforce://admin@RecColl04.org:test12345@ap1.stmpa.stm.salesforce.com?https=true&api=51.0 "+
+                    " USER CollectionOwner@RecColl04.org IDENTIFIED by \"test12345\"");
+            results = reconnect3.executeQuery();
+            System.out.println(renderResultSet(results));
+            assertNotNull(results);
+            PreparedStatement select_id_from_account3 = connection.prepareStatement("select Id, Name from Organization");
+            results = select_id_from_account3.executeQuery();
+            System.out.println(renderResultSet(results));
+            assertNotNull(results);
+        } catch (Exception e) {
+            throw new SQLException("Failed to log in into RecColl04 - using full jdbc URL with conflicting User and password", e);
+        }
+
+    }
+
+    @Test
+    @Ignore
+    public void testConnect_ReconnectToHost_ByHostName() throws  SQLException {
+        Connection connection = driver.connect("jdbc:ascendix:salesforce://dev@Local.org:123456@spuliaiev-wsm1.internal.salesforce.com:7357?https=false&api=48.0", new Properties());
+        assertNotNull(connection);
+        PreparedStatement select_id_from_account1 = connection.prepareStatement("select Id, Name from Organization");
+        ResultSet results = select_id_from_account1.executeQuery();
+        System.out.println(renderResultSet(results));
+
+        try {
+            PreparedStatement reconnect3 = connection.prepareStatement("CONNECT TO  " +
+                    " https://ap1.stmpa.stm.salesforce.com "+
+                    " USER CollectionOwner@RecColl04.org IDENTIFIED by \"test12345\"");
+            results = reconnect3.executeQuery();
+            System.out.println(renderResultSet(results));
+            assertNotNull(results);
+            PreparedStatement select_id_from_account3 = connection.prepareStatement("select Id, Name from Organization");
+            results = select_id_from_account3.executeQuery();
+            System.out.println(renderResultSet(results));
+            assertNotNull(results);
+        } catch (Exception e) {
+            throw new SQLException("Failed to log in into RecColl02 - using host name", e);
+        }
+    }
+
 
     private String renderResultSet(ResultSet results) throws SQLException {
         StringBuilder out = new StringBuilder();
@@ -207,13 +283,40 @@ public class ForceDriverTest {
 
     @Test
     public void testGetConnStringProperties_StandartUrlFormat() throws  IOException {
-        Properties actuals = driver.getConnStringProperties("jdbc:ascendix:salesforce://test@test.ru:aaaa!aaa@login.salesforce.ru");
+        Properties actuals = driver.getConnStringProperties("jdbc:ascendix:salesforce://test@test.ru:aaaa!aaa@login.salesforce.ru:7642");
 
         assertEquals(3, actuals.size());
         assertTrue(actuals.containsKey("user"));
         assertEquals("test@test.ru", actuals.getProperty("user"));
         assertEquals("aaaa!aaa", actuals.getProperty("password"));
-        assertEquals("login.salesforce.ru", actuals.getProperty("loginDomain"));
+        assertEquals("login.salesforce.ru:7642", actuals.getProperty("loginDomain"));
+    }
+
+    @Test
+    public void testGetConnStringProperties_HostName() throws  IOException {
+        Properties actuals = driver.getConnStringProperties("login.salesforce.ru:7642");
+
+        assertEquals(2, actuals.size());
+        assertEquals("login.salesforce.ru:7642", actuals.getProperty("loginDomain"));
+        assertEquals(true, driver.resolveBooleanProperty(actuals, "https", true));
+    }
+
+    @Test
+    public void testGetConnStringProperties_HostNameHttp() throws  IOException {
+        Properties actuals = driver.getConnStringProperties("http://login.salesforce.ru:7642");
+
+        assertEquals(2, actuals.size());
+        assertEquals("login.salesforce.ru:7642", actuals.getProperty("loginDomain"));
+        assertEquals(false, driver.resolveBooleanProperty(actuals, "https", true));
+    }
+
+    @Test
+    public void testGetConnStringProperties_IP() throws  IOException {
+        Properties actuals = driver.getConnStringProperties("192.168.0.2:7642");
+
+        assertEquals(2, actuals.size());
+        assertEquals("192.168.0.2:7642", actuals.getProperty("loginDomain"));
+        assertEquals(true, driver.resolveBooleanProperty(actuals, "https", true));
     }
 
     @Test

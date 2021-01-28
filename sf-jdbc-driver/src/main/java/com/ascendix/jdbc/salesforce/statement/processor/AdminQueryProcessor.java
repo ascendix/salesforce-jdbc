@@ -1,10 +1,13 @@
 package com.ascendix.jdbc.salesforce.statement.processor;
 
+import com.ascendix.jdbc.salesforce.ForceDriver;
 import com.ascendix.jdbc.salesforce.delegates.PartnerService;
 import com.ascendix.jdbc.salesforce.resultset.CommandLogCachedResultSet;
 import com.ascendix.jdbc.salesforce.statement.ForcePreparedStatement;
 
+import java.io.IOException;
 import java.sql.ResultSet;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,9 +21,9 @@ public class AdminQueryProcessor {
       Example: CONNECT TO tcp:postgresql://localhost/connectdb USER connectuser IDENTIFIED BY connectpw;
       Local Syntax: CONNECT [ TO <smthg>] USER <user-name> IDENTIFIED BY <password>;
      */
-    private static final Pattern LOGIN_COMMAND_PG = Pattern.compile("(?i)CONNECT\\s+(TO\\s+(?<url>\\S+)\\s+)?USER\\s+(?<username>\\S+)\\s+IDENTIFIED BY\\s+(?<userpass>\\S+)\\s*;?");
+    private static final Pattern LOGIN_COMMAND_PG = Pattern.compile("CONNECT\\s+(TO\\s+(?<url>\\S+))?(\\s+USER\\s+(?<username>\\S+)\\s+IDENTIFIED BY\\s+(?<userpass>\\S+))?\\s*;?", Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern LOGIN_COMMAND_ORA = Pattern.compile("(?i)CONN(?:ECT)?\\s+(?<username>\\S+)/(?<userpass>\\S+)\\s*;?");
+    private static final Pattern LOGIN_COMMAND_ORA = Pattern.compile("CONN(?:ECT)?\\s+(?<username>\\S+)/(?<userpass>\\S+)\\s*;?", Pattern.CASE_INSENSITIVE);
 
 
     public static boolean isAdminQuery(String soqlQuery) {
@@ -67,15 +70,33 @@ public class AdminQueryProcessor {
             if (url != null) {
                 url = url.trim().replaceAll("^['\"]", "").replaceAll("['\"]$", "");
             }
+            // evaluate credentials and url properties - just for logging
+            String logUserName = userName;
+            String logHost = "existing host";
+
+            if (url != null) {
+                try {
+                    Properties props = ForceDriver.getConnStringProperties(url);
+                    if (logUserName == null) {
+                        logUserName = props.getProperty("user");
+                    }
+                    if (props.getProperty("loginDomain") != null) {
+                        logHost = props.getProperty("loginDomain");
+                    }
+                } catch (IOException e) {
+                    // No log as it's only for logging - will be triggered inside the reconnect operation
+                }
+            }
+
             try {
                 boolean reconnected = statement.reconnect(url, userName, userPass);
                 if (reconnected) {
-                    resultSet.log("Admin query: CONNECT SUCCESS");
+                    resultSet.log("Admin query: CONNECTION SUCCESSFUL as " + logUserName + " to " + logHost);
                 } else {
-                    resultSet.log("Admin query: CONNECT FAILED");
+                    resultSet.log("Admin query: CONNECTION FAILED as " + logUserName + " to " + logHost);
                 }
             } catch (Exception e) {
-                resultSet.log("Admin query: CONNECT ERROR");
+                resultSet.log("Admin query: CONNECTION ERROR as " + logUserName + " to " + logHost + " : " +e.getMessage());
             }
         }
         return resultSet;

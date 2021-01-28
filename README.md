@@ -14,7 +14,47 @@ These issues were fixed in the current version in this fork.
 The current version of the driver should be compatible with **Salesforce Partner API version 39.0 and higher** and **Java 8**.
 
 ## Get the driver
-Download the driver [here](https://spuliaiev-sfdc.github.io/salesforce-jdbc/deliverables/sf-jdbc-driver-1.3.0-SNAPSHOT-jar-with-dependencies.jar)
+Download the driver [here](https://spuliaiev-sfdc.github.io/salesforce-jdbc/deliverables/sf-jdbc-driver-1.3.1-SNAPSHOT-jar-with-dependencies.jar)
+
+## Supported features
+1. Queries support native SOQL;
+  ```SQL
+   select Id, Account.Name, Owner.id, Owner.Name from Account
+```
+2. Nested queries are supported;
+3. Request caching support on local drive. Caching supports 2 modes: global and session. Global mode means that the cached result will be accessible for all system users for certain JVM session. Session cache mode works for each Salesforce connection session separately. Both modes cache stores request result while JVM still running but no longer than for 1 hour. The cache mode can be enabled with a prefix of SOQL query. 
+
+How to use:
+ * Global cache mode:
+  ```SQL
+  CACHE GLOBAL SELECT Id, Name FROM Account
+  ```
+ * Session cache mode
+  ```SQL
+  CACHE SESSION SELECT Id, Name FROM Account
+  ```
+4. Reconnect to other organization at the same host
+```SQL
+-- Postgres Notation
+CONNECT USER admin@OtherOrg.com IDENTIFIED by "123456"
+
+-- Oracle Notation
+CONNECT admin@OtherOrg.com/123456
+
+-- Postgres Notation to a different host using secure connection (by default)
+CONNECT 
+    TO ap1.stmpa.stm.salesforce.com
+    USER admin@OtherOrg.com IDENTIFIED by "123456"
+
+-- Postgres Notation to a different host - local host using insecure connection
+CONNECT 
+    TO http://localhost:6109
+    USER admin@OtherOrg.com IDENTIFIED by "123456"
+```
+P.S. You need to use the machine host name in the connection url - not MyDomain org host name.
+
+## Limitations
+1. The driver is only for read-only purposes now. Insert/udate/delete functionality is not implemented yet.
 
 
 ## With Maven
@@ -37,8 +77,8 @@ Download the driver [here](https://spuliaiev-sfdc.github.io/salesforce-jdbc/deli
 ### Add dependency   
     <dependency>
         <groupId>com.ascendix.salesforce</groupId>
-        <artifactId>salesforce-jdbc</artifactId>
-        <version>1.1-20180403.104727-1</version>
+        <artifactId>sf-jdbc-driver</artifactId>
+        <version>1.3.1-SNAPSHOT</version>
      </dependency>
 
 
@@ -76,32 +116,6 @@ jdbc:ascendix:salesforce://;sessionId=uniqueIdAssociatedWithTheSession
 | _api_ | Api version to use. <br>Default value is _50.0_. <br>Set _test.salesforce.com_ value to use sandbox. |
 | _client_ | Client Id to use. <br>Default value is empty.  |
 | _insecurehttps_ | Allow invalid certificates for SSL.  |
-
-
-## Supported features
-1. Queries support native SOQL;
-2. Nested queries are supported;
-3. Request caching support on local drive. Caching supports 2 modes: global and session. Global mode means that the cached result will be accessible for all system users for certain JVM session. Session cache mode works for each Salesforce connection session separately. Both modes cache stores request result while JVM still running but no longer than for 1 hour. The cache mode can be enabled with a prefix of SOQL query. How to use:
-  * Global cache mode:
-  ```SQL
-  CACHE GLOBAL SELECT Id, Name FROM Account
-  ```
-  * Session cache mode
-  ```SQL
-  CACHE SESSION SELECT Id, Name FROM Account
-  ```
-4. Reconnect to other organization at the same host
-```SQL
--- Postgres Notation
-CONNECT USER admin@OtherOrg.com IDENTIFIED by "123456"
-
--- Oracle Notation
-CONNECT admin@OtherOrg.com/123456
-```
-   P.S. You need to use the machine host name in the connection url - not MyDomain org host name. 
-
-## Limitations
-1. The driver is only for read-only purposes now. Insert/udate/delete functionality is not implemented yet.
 
 ## Configure BIRT Studio to use Salesforce JDBC driver
 
@@ -148,6 +162,9 @@ It could be obtained from here:  https://github.com/spuliaiev-sfdc/salesforce-so
 
 
 ## Version History
+
+### 1.3.1.0
+Re-connection to a different host using CONNECT command
 
 ### 1.3.0.1
    Insecure HTTPS - disabling the SSL Certificate verification    

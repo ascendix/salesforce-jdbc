@@ -4,6 +4,7 @@ import com.ascendix.jdbc.salesforce.connection.ForceConnection;
 import com.ascendix.jdbc.salesforce.connection.ForceConnectionInfo;
 import com.ascendix.jdbc.salesforce.connection.ForceService;
 import com.sforce.soap.partner.PartnerConnection;
+import com.sforce.soap.partner.fault.UnexpectedErrorFault;
 import com.sforce.ws.ConnectionException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,6 +40,9 @@ public class ForceDriver implements Driver {
     private static final Pattern URL_PATTERN = Pattern.compile("\\A" + ACCEPTABLE_URL + "://(.*)");
     private static final Pattern URL_HAS_AUTHORIZATION_SEGMENT = Pattern.compile("\\A" + ACCEPTABLE_URL + "://([^:]+):([^@]+)@([^?]*)([?](.*))?");
     private static final Pattern PARAM_STANDARD_PATTERN = Pattern.compile("(([^=]+)=([^&]*)&?)");
+
+    private static final Pattern VALID_IP_ADDRESS_REGEX = Pattern.compile("^(?<protocol>https?://)?(?<loginDomain>(?<host>(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))(:(?<port>[0-9]+))?)$");
+    private static final Pattern VALID_HOST_NAME_REGEX = Pattern.compile("^(?<protocol>https?://)?(?<loginDomain>(?<host>(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9]))(:(?<port>[0-9]+))?)$");
 
     static {
         try {
@@ -94,9 +98,14 @@ public class ForceDriver implements Driver {
                         logger.log(Level.WARNING, "[ForceDriver] relogin helper failed - url parsing error", e);
                     }
                 }
-
-                newInfo.setUserName(userName);
-                newInfo.setPassword(userPassword);
+                if (userName != null) {
+                    newProperties.setProperty("user", userName);
+                }
+                if (userPassword != null) {
+                    newProperties.setProperty("password", userPassword);
+                }
+                newInfo.setUserName(newProperties.getProperty("user"));
+                newInfo.setPassword(newProperties.getProperty("password"));
                 newInfo.setClientName(newProperties.getProperty("client"));
                 newInfo.setSessionId(newProperties.getProperty("sessionId"));
                 newInfo.setSandbox(resolveSandboxProperty(newProperties));
@@ -112,9 +121,12 @@ public class ForceDriver implements Driver {
                     newPartnerConnection = ForceService.createPartnerConnection(newInfo);
                     logger.log(Level.WARNING, "[ForceDriver] relogin helper success="+(newPartnerConnection != null));
                     return newPartnerConnection;
+                } catch (UnexpectedErrorFault e) {
+                    logger.log(Level.WARNING, "[ForceDriver] relogin helper failed "+ e.getMessage(), e);
+                    throw new ConnectionException("Relogin failed ("+e.getExceptionCode()+") "+ e.getExceptionMessage(), e);
                 } catch (ConnectionException e) {
-                    logger.log(Level.WARNING, "[ForceDriver] relogin helper failed", e);
-                    return null;
+                    logger.log(Level.WARNING, "[ForceDriver] relogin helper failed "+ e.getMessage(), e);
+                    throw new ConnectionException("Relogin failed", e);
                 }
             });
         } catch (ConnectionException | IOException e) {
@@ -134,7 +146,7 @@ public class ForceDriver implements Driver {
         return null;
     }
 
-    private static Boolean resolveBooleanProperty(Properties properties, String propertyName, boolean defaultValue) {
+    protected static Boolean resolveBooleanProperty(Properties properties, String propertyName, boolean defaultValue) {
         String boolValue = properties.getProperty(propertyName);
         if (boolValue != null) {
             return Boolean.valueOf(boolValue);
@@ -150,7 +162,8 @@ public class ForceDriver implements Driver {
         return defaultValue;
     }
 
-    protected static Properties getConnStringProperties(String urlString) throws IOException {
+
+    public static Properties getConnStringProperties(String urlString) throws IOException {
         Properties result = new Properties();
         String urlProperties = null;
 
@@ -171,11 +184,28 @@ public class ForceDriver implements Driver {
                     String value = 3 >= matcher.groupCount() ? matcher.group(3) : null;
                     result.put(param, value);
                 }
-
             }
         } else if (stdMatcher.matches()) {
             urlProperties = stdMatcher.group(1);
             urlProperties = urlProperties.replaceAll(";", "\n");
+        } else {
+            Matcher ipMatcher = VALID_IP_ADDRESS_REGEX.matcher(urlString);
+            if (ipMatcher.matches()) {
+                result.put("loginDomain", ipMatcher.group("loginDomain"));
+                result.put("https", "true");
+                if (ipMatcher.group("protocol") != null && ipMatcher.group("protocol").toLowerCase().equals("http://")) {
+                    result.put("https", "false");
+                }
+            } else {
+                Matcher hostMatcher = VALID_HOST_NAME_REGEX.matcher(urlString);
+                if (hostMatcher.matches()) {
+                    result.put("loginDomain", hostMatcher.group("loginDomain"));
+                    result.put("https", "true");
+                    if (hostMatcher.group("protocol") != null && hostMatcher.group("protocol").toLowerCase().equals("http://")) {
+                        result.put("https", "false");
+                    }
+                }
+            }
         }
 
         if (urlProperties != null) {

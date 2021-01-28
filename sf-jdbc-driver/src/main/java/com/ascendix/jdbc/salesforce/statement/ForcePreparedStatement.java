@@ -376,7 +376,7 @@ public class ForcePreparedStatement implements PreparedStatement {
         return partnerService;
     }
 
-    public boolean reconnect(String url, String userName, String userPass) {
+    public boolean reconnect(String url, String userName, String userPass) throws ConnectionException {
         logger.info("[PrepStat] RECONNECT IMPLEMENTED newUserName="+userName + " url="+url);
         boolean updated = connection.updatePartnerConnection(url, userName, userPass);
         partnerService = null;

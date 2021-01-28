@@ -41,7 +41,7 @@ public class ForceConnection implements Connection {
          * @param pass the second function argument
          * @return the function result
          */
-        PartnerConnection apply(String url, String user, String pass);
+        PartnerConnection apply(String url, String user, String pass) throws ConnectionException;
     }
 
     private final PartnerConnection partnerConnection;
@@ -70,7 +70,7 @@ public class ForceConnection implements Connection {
         return partnerConnection;
     }
 
-    public boolean updatePartnerConnection(String url, String userName, String userPass) {
+    public boolean updatePartnerConnection(String url, String userName, String userPass) throws ConnectionException {
         boolean result = false;
         String currentUserName = null;
         try {
@@ -90,6 +90,7 @@ public class ForceConnection implements Connection {
                 }
             } catch (Exception e) {
                 logger.log(Level.SEVERE, "[Conn] updatePartnerConnection UPDATE FAILED to newUserName="+userName+" currentUserName="+currentUserName, e);
+                throw e;
             }
         }
         return result;

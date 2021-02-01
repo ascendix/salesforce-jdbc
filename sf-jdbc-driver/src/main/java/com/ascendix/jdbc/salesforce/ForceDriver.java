@@ -171,8 +171,12 @@ public class ForceDriver implements Driver {
         Matcher authMatcher = URL_HAS_AUTHORIZATION_SEGMENT.matcher(urlString);
 
         if (authMatcher.matches()) {
-            result.put("user", authMatcher.group(1));
-            result.put("password", authMatcher.group(2));
+            if (authMatcher.group(1) != null) {
+                result.put("user", authMatcher.group(1));
+            }
+            if (authMatcher.group(2) != null) {
+                result.put("password", authMatcher.group(2));
+            }
             result.put("loginDomain", authMatcher.group(3));
             if (authMatcher.groupCount() > 4 && authMatcher.group(5) != null) {
                 // has some other parameters - parse them from standard URL format like
@@ -186,7 +190,15 @@ public class ForceDriver implements Driver {
                 }
             }
         } else if (stdMatcher.matches()) {
-            urlProperties = stdMatcher.group(1);
+            String dataString = stdMatcher.group(1);
+            int endOfHost = dataString.contains(";") ? dataString.indexOf(";")-1 : dataString.length()-1;
+            String possibleHost = dataString.substring(0, endOfHost+1);
+            if (possibleHost.trim().length() > 0 && !possibleHost.contains("=")) {
+                result.put("loginDomain", possibleHost);
+                urlProperties = dataString.substring(endOfHost+1);
+            } else {
+                urlProperties = dataString;
+            }
             urlProperties = urlProperties.replaceAll(";", "\n");
         } else {
             Matcher ipMatcher = VALID_IP_ADDRESS_REGEX.matcher(urlString);

@@ -98,10 +98,8 @@ public class ForceDriver implements Driver {
                         logger.log(Level.WARNING, "[ForceDriver] relogin helper failed - url parsing error", e);
                     }
                 }
-                if (userName != null) {
+                if (userName != null && userPassword != null) {
                     newProperties.setProperty("user", userName);
-                }
-                if (userPassword != null) {
                     newProperties.setProperty("password", userPassword);
                 }
                 newInfo.setUserName(newProperties.getProperty("user"));

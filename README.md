@@ -14,7 +14,7 @@ These issues were fixed in the current version in this fork.
 The current version of the driver should be compatible with **Salesforce Partner API version 39.0 and higher** and **Java 8**.
 
 ## Get the driver
-Download the driver [here](https://spuliaiev-sfdc.github.io/salesforce-jdbc/deliverables/sf-jdbc-driver-1.3.1-SNAPSHOT-jar-with-dependencies.jar)
+Download the driver JAR file from [here](https://spuliaiev-sfdc.github.io/salesforce-jdbc/deliverables/sf-jdbc-driver-1.3.1-SNAPSHOT-jar-with-dependencies.jar)
 
 ## Supported features
 1. Queries support native SOQL;

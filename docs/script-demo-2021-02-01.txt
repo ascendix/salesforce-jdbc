@@ -1,44 +1,27 @@
 
+
 Let me show you the simplest way to run SOQL queries to any environment from single IDE.
 I am ging to show this on the IntelliJ IDE, but the driver I am working on is a regular JDBC driver -
 so it can be used from any IDE you prefer - Eclipse, Oracle SQL Developer or any other.
 
-Let's start with registration of some database - I am going to use my locally running environment.
-Here is my host in the browser - I will save it. Please use the real host name - not the domain name
-generated for the particular org by MyDomain feature.
-http://spuliaiev-wsm1.internal.salesforce.com:6109
-I have an org there - which is using the following credentials:
-  demo@jdbc.org 123456
-
-So in order to get access there from my ID I need to download the JDBC driver from the page:
+So in order to get access there I need to download the JDBC driver from the page:
 https://github.com/spuliaiev-sfdc/salesforce-jdbc
 
-and create a Driver and Datasource in IntelliJ:
- Opening the Database tab and create a JDBC driver.
+And we need to register this driver in the IDE.
 
-I am providing the credentials and now we need to construct the URL for the driver.
-Replace http scheme with the driver scheme:
-http://spuliaiev-wsm1.internal.salesforce.com:6109
-
-jdbc:ascendix:salesforce://spuliaiev-wsm1.internal.salesforce.com:6109
-If we want to use default settings - we do not need to do anything else.
-By default I mean that we use SSL to access data - meaning HTTPS protocol.
-And default API version for driver - which is 50.0
-If we want different options - we can provide them as described here:
-https://github.com/spuliaiev-sfdc/salesforce-jdbc#configuration-properties
-In our case we are talking about local env which usually runs insecurely on HTTP, so let's specify
-https=false and set API Version to api=52.0
-
-So here is what we get:
-jdbc:ascendix:salesforce://dev@Local.org:123456@spuliaiev-wsm1.internal.salesforce.com:6109?https=false&api=48.0
+Let's start with registration of the database datasoure
+admin@RecColl03.org
+test12345
+jdbc:ascendix:salesforce://ap1.stmpa.stm.salesforce.com
 
 Let's test the connectivity.
-
 Here we see the driver version reported and that connection is good.
-You might need to turn the ignore sertificate in case ou run on SSL and certifivate is self issued
-using the option insecurehttps=true
 
-So now we can run queries on that org, let's verify that we have this org connected actually:
+By default API version used is 50.0
+We can also change the API version used by supplying the parameter
+?api=51.0
+
+Now we can run the queries for that org:
 select Id, Name from Organization
 
 And we can pull the list of Accounts:
@@ -48,24 +31,32 @@ When the pull of existing Entities available for this Org is finished we will se
 for the Entity Names and Entity Fields.
  See in the Database Tab the list of available entities.
 
+
 For now Driver supports only SOQL and some admin commands. And I want to show you how to use CONNECT command.
 The syntax of the command is following:
+
  Let's say I have a diffent org on the same server - I can swithc to that org and get it's data:
- CONNECT USER demo@jdbcOther.org IDENTIFIED BY 123456;
+ CONNECT USER admin@RecColl04.org IDENTIFIED BY test12345;
+
  And verifying that org has been switched:
  select Id, Name from Organization
 
 And we can switch not only to another org on this server - we can switch to any server:
- Let's test STMP org:
- CONNECT TO jdbc:ascendix:salesforce://admin@RecColl03.org:test12345@ap1.stmpa.stm.salesforce.com?https=true&api=51.0;
+
+
+ Let's test Locally running server:
+ Please use the real host name - not the domain name generated for the particular org by MyDomain feature.
+
+ CONNECT TO jdbc:ascendix:salesforce://dev@Local.org:123456@spuliaiev-wsm1.internal.salesforce.com:6109?https=false&api=51.0
+
  Select id, name from Organization;
 
  There is another syntax a bit simplier to do the same:
- CONNECT TO https://ap1.stmpa.stm.salesforce.com
-   USER CollectionOwner@RecColl04.org IDENTIFIED BY "test12345"
+ CONNECT TO http://spuliaiev-wsm1.internal.salesforce.com:6109
+   USER demo@jdbc.org IDENTIFIED BY "123456"
  Select id, name from Organization;
 
- It uses the schema to identify should it use SSL or not.
+ It uses the schema http or https to identify should it use SSL or not. Sometimes for self signed SSL certificates you will have to use option insecurehttps=true
 
  That's it for now.
  I am also working on adding UPDATE and INSERT parsers so you could run these commands

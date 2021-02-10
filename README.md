@@ -163,6 +163,9 @@ It could be obtained from here:  https://github.com/spuliaiev-sfdc/salesforce-so
 
 ## Version History
 
+### 1.3.1.3
+CONNECT command parsing fixes
+
 ### 1.3.1.0
 Re-connection to a different host using CONNECT command
 

@@ -10,6 +10,10 @@ However that version is not compatible with IntelliJ because of a lot of unsuppo
 
 These issues were fixed in the current version in this fork.
 
+[Watch the demo video](https://spuliaiev-sfdc.github.io/salesforce-jdbc/docs/SOQL-JDBC-IntelliJ-demo.mp4)
+
+[![Watch the demo video](https://spuliaiev-sfdc.github.io/salesforce-jdbc/docs/intelliJ.png)](https://spuliaiev-sfdc.github.io/salesforce-jdbc/docs/SOQL-JDBC-IntelliJ-demo.mp4)
+
 ## Supported Salesforce and Java versions
 The current version of the driver should be compatible with **Salesforce Partner API version 39.0 and higher** and **Java 8**.
 

@@ -7,6 +7,8 @@ import com.ascendix.jdbc.salesforce.delegates.ForceResultField;
 import com.ascendix.jdbc.salesforce.metadata.ColumnMap;
 import com.ascendix.jdbc.salesforce.metadata.ForceDatabaseMetaData;
 import com.ascendix.jdbc.salesforce.statement.processor.AdminQueryProcessor;
+import com.ascendix.jdbc.salesforce.statement.processor.InsertQueryAnalyzer;
+import com.ascendix.jdbc.salesforce.statement.processor.InsertQueryProcessor;
 import com.sforce.ws.ConnectionException;
 import org.apache.commons.lang3.StringUtils;
 import org.mapdb.DB;
@@ -39,13 +41,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -130,6 +126,14 @@ public class ForcePreparedStatement implements PreparedStatement {
         if (AdminQueryProcessor.isAdminQuery(soqlQuery)) {
             try {
                 return AdminQueryProcessor.processQuery(this, soqlQuery, getPartnerService());
+            } catch (ConnectionException | SOQLParsingException e) {
+                throw new SQLException(e);
+            }
+        }
+        InsertQueryAnalyzer insertQueryAnalyzer = getInsertQueryAnalyzer();
+        if (InsertQueryProcessor.isInsertQuery(soqlQuery, insertQueryAnalyzer)) {
+            try {
+                return InsertQueryProcessor.processQuery(this, soqlQuery, getPartnerService(), insertQueryAnalyzer);
             } catch (ConnectionException | SOQLParsingException e) {
                 throw new SQLException(e);
             }
@@ -333,6 +337,7 @@ public class ForcePreparedStatement implements PreparedStatement {
     }
 
     private SoqlQueryAnalyzer soqlQueryAnalyzer;
+    private InsertQueryAnalyzer insertQueryAnalyzer;
 
     private SoqlQueryAnalyzer getSoqlQueryAnalyzer() {
         logger.info("[PrepStat] getSoqlQueryAnalyzer IMPLEMENTED "+soqlQuery);
@@ -346,6 +351,44 @@ public class ForcePreparedStatement implements PreparedStatement {
             }, connection.getCache());
         }
         return soqlQueryAnalyzer;
+    }
+
+    private InsertQueryAnalyzer getInsertQueryAnalyzer() {
+        logger.info("[PrepStat] getInsertQueryAnalyzer IMPLEMENTED "+soqlQuery);
+        if (insertQueryAnalyzer == null) {
+            insertQueryAnalyzer = new InsertQueryAnalyzer(prepareQuery(), (objName) -> {
+                try {
+                    return getPartnerService().describeSObject(objName);
+                } catch (ConnectionException e) {
+                    throw new RuntimeException(e);
+                }
+            }, connection.getCache(),
+                    soql -> runResolveSubselect(soql));
+        }
+        return insertQueryAnalyzer;
+    }
+
+    private List<Map<String, Object>> runResolveSubselect(String soql) {
+        List<Map<String, Object>> results = new ArrayList<>();
+        logger.info("Resolving subselect \n"+soql);
+        try {
+            ForcePreparedStatement forcePreparedStatement = new ForcePreparedStatement(connection, soql);
+            ResultSet resultSet = forcePreparedStatement.query();
+
+            while(resultSet.next()) {
+                // LinkedHashMap is needed to save the order of the fields
+                Map<String, Object> record = new LinkedHashMap<>();
+                results.add(record);
+                for(int i = 0; i < resultSet.getMetaData().getColumnCount(); i++) {
+                     record.put(resultSet.getMetaData().getColumnName(i+1), resultSet.getString(i+1));
+                }
+            }
+            logger.info("  "+results.size()+" records resolved with "+resultSet.getMetaData().getColumnCount()+" columns");
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to resolve subselect \n"+soql, e);
+        }
+
+        return results;
     }
 
     @Override

@@ -3,21 +3,13 @@ package com.ascendix.jdbc.salesforce.delegates;
 import com.ascendix.jdbc.salesforce.metadata.Column;
 import com.ascendix.jdbc.salesforce.metadata.Table;
 import com.ascendix.jdbc.salesforce.statement.FieldDef;
-import com.sforce.soap.partner.DescribeGlobalResult;
-import com.sforce.soap.partner.DescribeGlobalSObjectResult;
-import com.sforce.soap.partner.DescribeSObjectResult;
-import com.sforce.soap.partner.Field;
-import com.sforce.soap.partner.PartnerConnection;
-import com.sforce.soap.partner.QueryResult;
+import com.sforce.soap.partner.*;
+import com.sforce.soap.partner.sobject.SObject;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.bind.XmlObject;
 import org.apache.commons.collections4.IteratorUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -212,5 +204,25 @@ public class PartnerService {
 
     private boolean isDataObjectType(XmlObject obj) {
         return !SOAP_RESPONSE_SERVICE_OBJECT_TYPES.contains(obj.getName().getLocalPart());
+    }
+
+    public SaveResult[] createRecords(String entityName, List<Map<String, Object>> recordsDefinitions) throws ConnectionException {
+        // Create a new sObject of type Contact
+        // and fill out its fields.
+
+        SObject[] records = new SObject[recordsDefinitions.size()];
+
+
+        for (int i = 0; i < recordsDefinitions.size(); i++) {
+            Map<String, Object> recordDef = recordsDefinitions.get(i);
+            SObject record = records[i] = new SObject();
+            record.setType(entityName);
+            for (Map.Entry<String, Object> field: recordDef.entrySet()) {
+                record.setField(field.getKey(), field.getValue());
+            }
+        }
+        // Make a create call and pass it the array of sObjects
+        SaveResult[] results = partnerConnection.create(records);
+        return results;
     }
 }

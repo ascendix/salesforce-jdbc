@@ -443,7 +443,6 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
         System.out.println("[UpdateVisitor] CaseExpression");
         EvaluateExpressionVisitor caseEvaluatorLeft = subVisitor();
         caseExpression.getSwitchExpression().accept(caseEvaluatorLeft);
-
     }
 
     @Override

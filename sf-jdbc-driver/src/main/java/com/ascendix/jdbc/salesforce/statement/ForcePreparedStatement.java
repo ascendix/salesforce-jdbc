@@ -6,9 +6,7 @@ import com.ascendix.jdbc.salesforce.connection.ForceConnection;
 import com.ascendix.jdbc.salesforce.delegates.ForceResultField;
 import com.ascendix.jdbc.salesforce.metadata.ColumnMap;
 import com.ascendix.jdbc.salesforce.metadata.ForceDatabaseMetaData;
-import com.ascendix.jdbc.salesforce.statement.processor.AdminQueryProcessor;
-import com.ascendix.jdbc.salesforce.statement.processor.InsertQueryAnalyzer;
-import com.ascendix.jdbc.salesforce.statement.processor.InsertQueryProcessor;
+import com.ascendix.jdbc.salesforce.statement.processor.*;
 import com.sforce.ws.ConnectionException;
 import org.apache.commons.lang3.StringUtils;
 import org.mapdb.DB;
@@ -134,6 +132,14 @@ public class ForcePreparedStatement implements PreparedStatement {
         if (InsertQueryProcessor.isInsertQuery(soqlQuery, insertQueryAnalyzer)) {
             try {
                 return InsertQueryProcessor.processQuery(this, soqlQuery, getPartnerService(), insertQueryAnalyzer);
+            } catch (ConnectionException | SOQLParsingException e) {
+                throw new SQLException(e);
+            }
+        }
+        UpdateQueryAnalyzer updateQueryAnalyzer = getUpdateQueryAnalyzer();
+        if (UpdateQueryProcessor.isUpdateQuery(soqlQuery, updateQueryAnalyzer)) {
+            try {
+                return UpdateQueryProcessor.processQuery(this, soqlQuery, getPartnerService(), updateQueryAnalyzer);
             } catch (ConnectionException | SOQLParsingException e) {
                 throw new SQLException(e);
             }
@@ -338,6 +344,7 @@ public class ForcePreparedStatement implements PreparedStatement {
 
     private SoqlQueryAnalyzer soqlQueryAnalyzer;
     private InsertQueryAnalyzer insertQueryAnalyzer;
+    private UpdateQueryAnalyzer updateQueryAnalyzer;
 
     private SoqlQueryAnalyzer getSoqlQueryAnalyzer() {
         logger.info("[PrepStat] getSoqlQueryAnalyzer IMPLEMENTED "+soqlQuery);
@@ -366,6 +373,21 @@ public class ForcePreparedStatement implements PreparedStatement {
                     soql -> runResolveSubselect(soql));
         }
         return insertQueryAnalyzer;
+    }
+
+    private UpdateQueryAnalyzer getUpdateQueryAnalyzer() {
+        logger.info("[PrepStat] getUpdateQueryAnalyzer IMPLEMENTED "+soqlQuery);
+        if (updateQueryAnalyzer == null) {
+            updateQueryAnalyzer = new UpdateQueryAnalyzer(prepareQuery(), (objName) -> {
+                try {
+                    return getPartnerService().describeSObject(objName);
+                } catch (ConnectionException e) {
+                    throw new RuntimeException(e);
+                }
+            }, connection.getCache(),
+                    soql -> runResolveSubselect(soql));
+        }
+        return updateQueryAnalyzer;
     }
 
     private List<Map<String, Object>> runResolveSubselect(String soql) {

@@ -225,4 +225,24 @@ public class PartnerService {
         SaveResult[] results = partnerConnection.create(records);
         return results;
     }
+
+    public SaveResult[] saveRecords(String entityName, List<Map<String, Object>> recordsDefinitions) throws ConnectionException {
+        // Create a new sObject of type Contact
+        // and fill out its fields.
+
+        SObject[] records = new SObject[recordsDefinitions.size()];
+
+
+        for (int i = 0; i < recordsDefinitions.size(); i++) {
+            Map<String, Object> recordDef = recordsDefinitions.get(i);
+            SObject record = records[i] = new SObject();
+            record.setType(entityName);
+            for (Map.Entry<String, Object> field: recordDef.entrySet()) {
+                record.setField(field.getKey(), field.getValue());
+            }
+        }
+        // Make a create call and pass it the array of sObjects
+        SaveResult[] results = partnerConnection.update(records);
+        return results;
+    }
 }

@@ -34,14 +34,19 @@ public class InsertQueryProcessor {
         }
 
         try {
+            int updateCount = 0;
             ISaveResult[] records = partnerService.createRecords(insertQueryAnalyzer.getFromObjectName(), insertQueryAnalyzer.getRecords());
+
             for(ISaveResult result: records) {
                 if (result.isSuccess()) {
                     resultSet.log(insertQueryAnalyzer.getFromObjectName()+" created with Id="+result.getId());
+                    updateCount++;
                 } else {
                     resultSet.addWarning(insertQueryAnalyzer.getFromObjectName()+" failed to create with error="+ Arrays.stream(result.getErrors()).map(IError::getMessage).collect(Collectors.joining(",")));
                 }
             }
+            statement.setUpdateCount(updateCount);
+            statement.setResultSet(resultSet);
         } catch (ConnectionException e) {
             resultSet.addWarning("Failed request to create entities with error: "+e.getMessage());
             logger.log(Level.SEVERE,"Failed request to create entities with error: "+e.getMessage(), e);

@@ -70,6 +70,11 @@ public class ForcePreparedStatement implements PreparedStatement {
     private List<Object> parameters = new ArrayList<>();
     private CacheMode cacheMode;
     private static DB cacheDb = DBMaker.tempFileDB().closeOnJvmShutdown().make();
+    private int updateCount = -1;
+    private boolean updateCountReturned = false;
+    private ResultSet resultSet;
+    private boolean resultSetReturned = false;
+    private SQLWarning warnings = new SQLWarning();
 
     // TODO: Join caches and move it to ForceConnection class. Divide to session
     // and static global cache.
@@ -103,6 +108,11 @@ public class ForcePreparedStatement implements PreparedStatement {
     @Override
     public ResultSet executeQuery() throws SQLException {
         logger.info("[PrepStat] executeQuery IMPLEMENTED "+soqlQuery);
+        this.updateCount = -1;
+        this.updateCountReturned = false;
+        this.resultSetReturned = false;
+        this.resultSet = null;
+
         return cacheMode == CacheMode.NO_CACHE
                 ? query()
                 : dataCache.computeIfAbsent(getCacheKey(), s -> {
@@ -407,7 +417,9 @@ public class ForcePreparedStatement implements PreparedStatement {
             }
             logger.info("  "+results.size()+" records resolved with "+resultSet.getMetaData().getColumnCount()+" columns");
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed to resolve subselect \n"+soql, e);
+            logger.log(Level.WARNING, "Failed to resolve sub-select \n"+soql, e);
+            this.warnings.addSuppressed(new SQLWarning("Failed to resolve sub-select \n"+soql, e));
+            throw new java.lang.IllegalArgumentException("Failed to resolve sub-select: "+e.getMessage());
         }
 
         return results;
@@ -638,8 +650,8 @@ public class ForcePreparedStatement implements PreparedStatement {
         logger.info("[PrepStat] executeQuery IMPLEMENTED "+sql);
         this.cacheMode = getCacheMode(sql);
         this.soqlQuery = removeCacheHints(sql);
-
-        return executeQuery();
+        this.resultSet = executeQuery();
+        return this.resultSet;
     }
 
     @Override
@@ -648,8 +660,11 @@ public class ForcePreparedStatement implements PreparedStatement {
         this.cacheMode = getCacheMode(sql);
         this.soqlQuery = removeCacheHints(sql);
 
-        executeQuery();
-        return 0;
+        this.updateCount = -1;
+        this.updateCountReturned = false;
+        this.resultSet = executeQuery();
+        this.resultSetReturned = false;
+        return this.updateCount;
     }
 
     @Override
@@ -696,14 +711,17 @@ public class ForcePreparedStatement implements PreparedStatement {
 
     @Override
     public SQLWarning getWarnings() throws SQLException {
-        // TODO Auto-generated method stub
-        return null;
+        logger.info("[PrepStat] getWarnings IMPLEMENTED ");
+        return resultSet != null ? resultSet.getWarnings() : warnings;
     }
 
     @Override
     public void clearWarnings() throws SQLException {
-        // TODO Auto-generated method stub
-
+        logger.info("[PrepStat] clearWarnings IMPLEMENTED ");
+        if(resultSet != null) {
+            resultSet.clearWarnings();
+        }
+        warnings = new SQLWarning();
     }
 
     @Override
@@ -718,26 +736,51 @@ public class ForcePreparedStatement implements PreparedStatement {
         this.cacheMode = getCacheMode(sql);
         this.soqlQuery = removeCacheHints(sql);
 
-        executeQuery();
-        return false;
+        this.updateCount = -1;
+        this.updateCountReturned = false;
+        this.resultSet = executeQuery();
+        this.resultSetReturned = false;
+        boolean result = this.updateCount < 0;
+        logger.info("[PrepStat] execute IMPLEMENTED ("+result+")"+sql);
+        return result;
     }
 
     @Override
     public ResultSet getResultSet() throws SQLException {
-        logger.info("[PrepStat] getResultSet NOT_IMPLEMENTED "+soqlQuery);
-        return null;
+        ResultSet toReturn = updateCount < 0 ? resultSet : null;
+        if (this.resultSetReturned) {
+            logger.info("[PrepStat] getResultSet IMPLEMENTED Already Returned " + soqlQuery + "\n " +
+                    (resultSet == null ? " resultSet is NULL" : "resultSet is present") +
+                    (toReturn == null ? " -> Not to be returned" : " -> Returning"));
+            return null;
+        }
+        this.resultSetReturned = true;
+        logger.info("[PrepStat] getResultSet IMPLEMENTED " + soqlQuery + "\n " +
+                (resultSet == null ? " resultSet is NULL" : "resultSet is present") +
+                (toReturn == null ? " -> Not to be returned" : " -> Returning"));
+        return toReturn;
     }
 
     @Override
     public int getUpdateCount() throws SQLException {
-        logger.info("[PrepStat] getUpdateCount NOT_IMPLEMENTED "+soqlQuery);
-        return -1;
+        if (this.updateCountReturned) {
+            logger.info("[PrepStat] getUpdateCount Already Returned "+updateCount+" IMPLEMENTED "+soqlQuery);
+            return -1;
+        }
+        logger.info("[PrepStat] getUpdateCount "+updateCount+" IMPLEMENTED "+soqlQuery);
+        this.updateCountReturned = true;
+        return updateCount;
     }
 
     @Override
     public boolean getMoreResults() throws SQLException {
-        logger.info("[PrepStat] getMoreResults NOT_IMPLEMENTED "+soqlQuery);
-        return false;
+        if (updateCount >=0 ) {
+            logger.info("[PrepStat] getMoreResults IMPLEMENTED (false) updateCount="+updateCount+" sql="+soqlQuery);
+            return false;
+        }
+        boolean more = resultSet != null && resultSet.next();
+        logger.info("[PrepStat] getMoreResults IMPLEMENTED ("+more+") updateCount="+updateCount+" sql="+soqlQuery);
+        return more;
     }
 
     @Override
@@ -1035,4 +1078,11 @@ public class ForcePreparedStatement implements PreparedStatement {
 
     }
 
+    public void setUpdateCount(int updateCount) {
+        this.updateCount = updateCount;
+    }
+
+    public void setResultSet(ResultSet resultSet) {
+        this.resultSet = resultSet;
+    }
 }

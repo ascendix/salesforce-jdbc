@@ -1,5 +1,6 @@
 # sforce-jdbc
-Salesforce JDBC driver allows Java programs to connect to a Salesforce data services using standard, database independent Java code. Is an open source JDBC driver written in Pure Java, and communicates over SOAP/HTTP(S) protocol.
+Salesforce JDBC driver allows Java programs to connect to a Salesforce data services using standard, database independent Java code. Is an open source JDBC driver written in Pure Java, 
+and communicates over SOAP/HTTP(S) protocol.
 The main purpose of the driver is to retrieve (only) data from Salesforce services for data analysis. Primary target platform for the driver usage is Eclipse BIRT engine.
 
 The original Git repository for this driver is [here](https://github.com/ascendix/salesforce-jdbc)
@@ -18,7 +19,9 @@ These issues were fixed in the current version in this fork.
 The current version of the driver should be compatible with **Salesforce Partner API version 39.0 and higher** and **Java 8**.
 
 ## Get the driver
-Download the driver JAR file from [here](https://spuliaiev-sfdc.github.io/salesforce-jdbc/deliverables/sf-jdbc-driver-1.3.1-SNAPSHOT-jar-with-dependencies.jar)
+Download the driver JAR file:
+1. Read-Only version 1.3.1 : from [here](https://spuliaiev-sfdc.github.io/salesforce-jdbc/deliverables/sf-jdbc-driver-1.3.1-SNAPSHOT-jar-with-dependencies.jar)
+2. Write support version 1.4.0 : from [here](https://spuliaiev-sfdc.github.io/salesforce-jdbc/deliverables/sf-jdbc-driver-1.4.0-SNAPSHOT-jar-with-dependencies.jar)
 
 ## Supported features
 1. Queries support native SOQL;
@@ -26,7 +29,29 @@ Download the driver JAR file from [here](https://spuliaiev-sfdc.github.io/salesf
    select Id, Account.Name, Owner.id, Owner.Name from Account
 ```
 2. Nested queries are supported;
-3. Request caching support on local drive. Caching supports 2 modes: global and session. Global mode means that the cached result will be accessible for all system users for certain JVM session. Session cache mode works for each Salesforce connection session separately. Both modes cache stores request result while JVM still running but no longer than for 1 hour. The cache mode can be enabled with a prefix of SOQL query. 
+3. Write is supported as INSERT/UPDATE statements for version >= 1.4.0
+   
+   The following functions are supported as part of calculation of new values:
+   * NOW()
+   * GETDATE()
+    
+   For Example:
+  ```SQL
+   INSERT INTO Account(Name, Phone) VALUES 
+    ('Account01', '555-123-1111'),
+    ('Account02', '555-123-2222');
+    
+    INSERT INTO Contact(FirstName, LastName, AccountId) 
+      SELECT Name, Phone, Id 
+        FROM Account
+        WHERE Name like 'Account0%';
+
+    UPDATE Contact SET LastName = 'Updated_Now_'+NOW()
+        WHERE AccountId IN (
+                SELECT ID from Account where Phone = '555-123-1111'
+        );
+```
+4. Request caching support on local drive. Caching supports 2 modes: global and session. Global mode means that the cached result will be accessible for all system users for certain JVM session. Session cache mode works for each Salesforce connection session separately. Both modes cache stores request result while JVM still running but no longer than for 1 hour. The cache mode can be enabled with a prefix of SOQL query. 
 
 How to use:
  * Global cache mode:
@@ -37,7 +62,7 @@ How to use:
   ```SQL
   CACHE SESSION SELECT Id, Name FROM Account
   ```
-4. Reconnect to other organization at the same host
+5. Reconnect to other organization at the same host
 ```SQL
 -- Postgres Notation
 CONNECT USER admin@OtherOrg.com IDENTIFIED by "123456"
@@ -58,7 +83,8 @@ CONNECT
 P.S. You need to use the machine host name in the connection url - not MyDomain org host name.
 
 ## Limitations
-1. The driver is only for read-only purposes now. Insert/udate/delete functionality is not implemented yet.
+1. ***Version < 1.4.0*** The driver is only for read-only purposes now. Insert/update/delete functionality is not implemented yet.
+2. ***Version >= 1.4.0*** Limited support of INSERT/UPDATE operations
 
 
 ## With Maven
@@ -82,7 +108,7 @@ P.S. You need to use the machine host name in the connection url - not MyDomain 
     <dependency>
         <groupId>com.ascendix.salesforce</groupId>
         <artifactId>sf-jdbc-driver</artifactId>
-        <version>1.3.1-SNAPSHOT</version>
+        <version>1.4.0-SNAPSHOT</version>
      </dependency>
 
 

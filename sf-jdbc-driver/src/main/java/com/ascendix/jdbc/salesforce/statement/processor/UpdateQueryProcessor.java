@@ -9,6 +9,8 @@ import com.sforce.ws.ConnectionException;
 
 import java.sql.ResultSet;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -35,7 +37,8 @@ public class UpdateQueryProcessor {
         }
 
         try {
-            ISaveResult[] records = partnerService.saveRecords(updateQueryAnalyzer.getFromObjectName(), updateQueryAnalyzer.getRecords());
+            List<Map<String, Object>> recordsToUpdate = updateQueryAnalyzer.getRecords();
+            ISaveResult[] records = partnerService.saveRecords(updateQueryAnalyzer.getFromObjectName(), recordsToUpdate);
             for(ISaveResult result: records) {
                 if (result.isSuccess()) {
                     resultSet.log(updateQueryAnalyzer.getFromObjectName()+" updated with Id="+result.getId());

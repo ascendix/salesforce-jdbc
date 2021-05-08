@@ -27,8 +27,12 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 public class CachedResultSet implements ResultSet, Serializable {
+
+    private static final String SF_JDBC_DRIVER_NAME = "SF JDBC driver RS";
+    private static final Logger logger = Logger.getLogger(SF_JDBC_DRIVER_NAME);
 
     private static final long serialVersionUID = 1L;
 
@@ -429,6 +433,7 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public void clearWarnings() throws SQLException {
+        logger.info("clearWarnings");
         this.warningsChain = null;
     }
 
@@ -577,6 +582,7 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public void addWarning(SQLWarning warn) {
+        logger.info("Adding Warning: "+warn.getMessage());
         if (warningsChain != null) {
             SQLWarning last = warningsChain;
             while (last != null && last.getNextWarning() != null) last = last.getNextWarning();
@@ -587,6 +593,7 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public void addWarning(String reason) {
+        logger.info("Adding Warning: "+reason);
         if (warningsChain != null) {
             SQLWarning last = warningsChain;
             while (last != null && last.getNextWarning() != null) last = last.getNextWarning();

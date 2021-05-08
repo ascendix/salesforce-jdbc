@@ -141,8 +141,9 @@ public class InsertQueryAnalyzer {
             } else {
                 if (getQueryData().getSelect() != null) {
                     if (subSelectResolver != null) {
+                        logger.info("Insert/Update has a sub-select: "+getQueryData().getSelect().toString());
                         List<Map<String, Object>> subRecords = subSelectResolver.apply(getQueryData().getSelect().toString());
-
+                        logger.info("Insert/Update fetched " +subRecords.size()+ " records from a sub-select: "+getQueryData().getSelect().toString());
                         for (Map<String, Object> subRecord: subRecords) {
                             // this subRecord is LinkedHashMap - so the order of fields is determined by soql
                             Map<String, Object> record = new HashMap<>();

@@ -1,5 +1,6 @@
 package com.ascendix.jdbc.salesforce.statement.processor.utils;
 
+import com.ascendix.jdbc.salesforce.exceptions.UnsupportedArgumentTypeException;
 import net.sf.jsqlparser.expression.*;
 import net.sf.jsqlparser.expression.operators.arithmetic.*;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
@@ -8,6 +9,11 @@ import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.select.SubSelect;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.sql.Time;
+
+import java.time.*;
 import java.util.Date;
 import java.util.Map;
 import java.util.logging.Level;
@@ -39,7 +45,7 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
 
     public String getResultString(String ifNull) {
         if (result == null) {
-            return "";
+            return ifNull;
         }
         if (result instanceof String) return ((String) result);
         return result.toString();
@@ -54,8 +60,9 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
         if (result instanceof Long) return ((Long) result);
         if (result instanceof Integer) return ((Integer) result).longValue();
         if (result instanceof String) return Long.parseLong((String)result);
-        logger.log(Level.SEVERE, String.format("Cannot convert to Fixed type %s value %s", result.getClass().getName(), result));
-        return 0;
+        String message = String.format("Cannot convert to Fixed type %s value %s", result.getClass().getName(), result);
+        logger.log(Level.SEVERE, message);
+        throw new UnsupportedArgumentTypeException(message);
     }
 
     public double getResultFloatNumber() {
@@ -67,8 +74,9 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
         if (result instanceof Long) return ((Long) result).doubleValue();
         if (result instanceof Integer) return ((Integer) result).doubleValue();
         if (result instanceof String) return Double.parseDouble((String)result);
-        logger.log(Level.SEVERE, String.format("Cannot convert to Float type %s value %s", result.getClass().getName(), result));
-        return 0d;
+        String message = String.format("Cannot convert to Float type %s value %s", result.getClass().getName(), result);
+        logger.log(Level.SEVERE, message);
+        throw new UnsupportedArgumentTypeException(message);
     }
 
     public boolean isResultString() {
@@ -85,6 +93,22 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
         return result != null && (
                         result instanceof Double ||
                         result instanceof Float);
+    }
+
+    public boolean isResultDateTime() {
+        return result != null && (
+                        result instanceof Instant ||
+                        result instanceof java.sql.Timestamp);
+    }
+
+    public boolean isResultTime() {
+        return result != null && (
+                        result instanceof java.sql.Time);
+    }
+
+    public boolean isResultDate() {
+        return result != null && (
+                        result instanceof java.sql.Date);
     }
 
     public boolean isResultNull() {
@@ -111,8 +135,14 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
     public void visit(Function function) {
         System.out.println("[UpdateVisitor] Function function="+function.getName());
         if ("now".equalsIgnoreCase(function.getName())) {
-            result = new Date().toGMTString();
+            result = new Date();
+            return;
         }
+        if ("getdate".equalsIgnoreCase(function.getName())) {
+            result = LocalDate.now();
+            return;
+        }
+        throw new RuntimeException("Function '"+function.getName()+"' is not implemented.");
     }
 
     @Override
@@ -180,6 +210,40 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
         result = stringValue.getValue();
     }
 
+    Object processDateNumberOperation(EvaluateExpressionVisitor left, EvaluateExpressionVisitor right, boolean isAdding) {
+        BigDecimal changeValue = BigDecimal.valueOf(right.getResultFloatNumber());
+        // https://oracle-base.com/articles/misc/oracle-dates-timestamps-and-intervals
+        // Also rounding - because otherwise 1 second will be 0.999993600
+        long secondsValue = changeValue.subtract(BigDecimal.valueOf(changeValue.intValue())).multiply(BigDecimal.valueOf(86400), new MathContext(4)).longValue();
+
+        Period changeDays = Period.ofDays(isAdding ? changeValue.intValue() : -changeValue.intValue());
+        Duration changeSec = Duration.ofSeconds(isAdding ? secondsValue : -secondsValue);
+        if (left.result instanceof java.sql.Date) {
+            LocalDate instant = ((java.sql.Date)left.result).toLocalDate();
+            instant = instant.plus(changeDays);
+            result = java.sql.Date.valueOf(instant);
+        }
+        if (left.result instanceof Instant) {
+            Instant instant = ((Instant)left.result);
+            instant = instant.plus(changeDays);
+            instant = instant.plus(changeSec);
+            result = instant;
+        }
+        if (left.result instanceof java.sql.Timestamp) {
+            Instant instant = ((java.sql.Timestamp)left.result).toInstant();
+            instant = instant.plus(changeDays);
+            instant = instant.plus(changeSec);
+            result = new java.sql.Timestamp(instant.toEpochMilli());
+        }
+        if (left.result instanceof Time) {
+            LocalTime instant = ((java.sql.Time)left.result).toLocalTime();
+            instant = instant.plus(changeSec);
+            result = java.sql.Time.valueOf(instant);
+        }
+
+        return result;
+    }
+
     @Override
     public void visit(Addition addition) {
         System.out.println("[UpdateVisitor] Addition");
@@ -187,6 +251,14 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
         addition.getLeftExpression().accept(subEvaluatorLeft);
         EvaluateExpressionVisitor subEvaluatorRight = subVisitor();
         addition.getRightExpression().accept(subEvaluatorRight);
+
+        if (!subEvaluatorLeft.isResultNull() && !subEvaluatorRight.isResultNull()){
+            if ((subEvaluatorLeft.isResultDateTime() || subEvaluatorLeft.isResultDate() || subEvaluatorLeft.isResultTime())  &&
+                (subEvaluatorRight.isResultFloatNumber() || subEvaluatorRight.isResultFixedNumber()) ) {
+                result = processDateNumberOperation(subEvaluatorLeft, subEvaluatorRight, true);
+                return;
+            }
+        }
 
         boolean isString = subEvaluatorLeft.isResultString() || subEvaluatorRight.isResultString();
         try {
@@ -203,6 +275,7 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
         }
 
         if (isString) {
+            // if string - convert to string "null"
             result = subEvaluatorLeft.getResultString("null") + subEvaluatorRight.getResultString("null");
             return;
         }
@@ -212,8 +285,10 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
             result = null;
             return;
         }
-        logger.log(Level.SEVERE, String.format("Addition not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName()));
         result = null;
+        String message = String.format("Addition not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName());
+        logger.log(Level.SEVERE, message);
+        throw new UnsupportedArgumentTypeException(message);
     }
 
     @Override
@@ -232,8 +307,9 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
 
         boolean isString = subEvaluatorLeft.isResultString()|| subEvaluatorRight.isResultString();
         if (isString) {
-            logger.log(Level.SEVERE, String.format("Division not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName()));
-            return;
+            String message = String.format("Division not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName());
+            logger.log(Level.SEVERE, message);
+            throw new UnsupportedArgumentTypeException(message);
         }
 
         if (subEvaluatorLeft.isResultFloatNumber() || subEvaluatorRight.isResultFloatNumber()) {
@@ -244,8 +320,10 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
             result = subEvaluatorLeft.getResultFixedNumber() / subEvaluatorRight.getResultFixedNumber();
             return;
         }
-        logger.log(Level.SEVERE, String.format("Division not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName()));
         result = null;
+        String message = String.format("Division not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName());
+        logger.log(Level.SEVERE, message);
+        throw new UnsupportedArgumentTypeException(message);
     }
 
     @Override
@@ -264,8 +342,9 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
 
         boolean isString = subEvaluatorLeft.isResultString() || subEvaluatorRight.isResultString();
         if (isString) {
-            logger.log(Level.SEVERE, String.format("Division not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName()));
-            return;
+            String message = String.format("Division not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName());
+            logger.log(Level.SEVERE, message);
+            throw new UnsupportedArgumentTypeException(message);
         }
 
         if (subEvaluatorLeft.isResultFloatNumber() || subEvaluatorRight.isResultFloatNumber()) {
@@ -276,8 +355,9 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
             result = subEvaluatorLeft.getResultFixedNumber() / subEvaluatorRight.getResultFixedNumber();
             return;
         }
-        logger.log(Level.SEVERE, String.format("Division not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName()));
-        result = null;
+        String message = String.format("Division not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName());
+        logger.log(Level.SEVERE, message);
+        throw new UnsupportedArgumentTypeException(message);
     }
 
     @Override
@@ -296,8 +376,9 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
 
         boolean isString = subEvaluatorLeft.isResultString() || subEvaluatorRight.isResultString();
         if (isString) {
-            logger.log(Level.SEVERE, String.format("Multiplication not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName()));
-            return;
+            String message = String.format("Multiplication not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName());
+            logger.log(Level.SEVERE, message);
+            throw new UnsupportedArgumentTypeException(message);
         }
 
         if (subEvaluatorLeft.isResultFloatNumber() || subEvaluatorRight.isResultFloatNumber()) {
@@ -308,8 +389,10 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
             result = subEvaluatorLeft.getResultFixedNumber() * subEvaluatorRight.getResultFixedNumber();
             return;
         }
-        logger.log(Level.SEVERE, String.format("Multiplication not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName()));
         result = null;
+        String message = String.format("Multiplication not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName());
+        logger.log(Level.SEVERE, message);
+        throw new UnsupportedArgumentTypeException(message);
     }
 
     @Override
@@ -320,6 +403,14 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
         EvaluateExpressionVisitor subEvaluatorRight = subVisitor();
         subtraction.getRightExpression().accept(subEvaluatorRight);
 
+        if (!subEvaluatorLeft.isResultNull() && !subEvaluatorRight.isResultNull()){
+            if ((subEvaluatorLeft.isResultDateTime() || subEvaluatorLeft.isResultDate() || subEvaluatorLeft.isResultTime())  &&
+                    (subEvaluatorRight.isResultFloatNumber() || subEvaluatorRight.isResultFixedNumber()) ) {
+                result = processDateNumberOperation(subEvaluatorLeft, subEvaluatorRight, false);
+                return;
+            }
+        }
+
         if (subEvaluatorLeft.isResultNull() || subEvaluatorRight.isResultNull()) {
             // if any of the parameters is null - return null
             result = null;
@@ -328,8 +419,9 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
 
         boolean isString = subEvaluatorLeft.isResultString() || subEvaluatorRight.isResultString();
         if (isString) {
-            logger.log(Level.SEVERE, String.format("Subtraction not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName()));
-            return;
+            String message = String.format("Subtraction not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName());
+            logger.log(Level.SEVERE, message);
+            throw new UnsupportedArgumentTypeException(message);
         }
 
         if (subEvaluatorLeft.isResultFloatNumber() || subEvaluatorRight.isResultFloatNumber()) {
@@ -340,8 +432,10 @@ public class EvaluateExpressionVisitor implements ExpressionVisitor {
             result = subEvaluatorLeft.getResultFixedNumber() - subEvaluatorRight.getResultFixedNumber();
             return;
         }
-        logger.log(Level.SEVERE, String.format("Subtraction not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName()));
+        String message = String.format("Subtraction not implemented for types %s and %s", subEvaluatorLeft.result.getClass().getName(), subEvaluatorRight.result.getClass().getName());
+        logger.log(Level.SEVERE, message);
         result = null;
+        throw new UnsupportedArgumentTypeException(message);
     }
 
     @Override

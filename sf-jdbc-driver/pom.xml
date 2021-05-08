@@ -6,7 +6,8 @@
     <parent>
         <artifactId>salesforce-jdbc</artifactId>
         <groupId>com.ascendix.salesforce</groupId>
-        <version>1.2-SNAPSHOT</version>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>sf-jdbc-driver</artifactId>
 
@@ -33,12 +34,21 @@
             <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
+            <version>4.0</version>
         </dependency>
 
         <!-- Test dependencies -->
@@ -81,6 +91,11 @@
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
+                            <archive>
+                                <manifest>
+                                    <mainClass>com.ascendix.jdbc.salesforce.metadata.ForceDatabaseMetaData</mainClass>
+                                </manifest>
+                            </archive>
                         </configuration>
                     </plugin>
                 </plugins>

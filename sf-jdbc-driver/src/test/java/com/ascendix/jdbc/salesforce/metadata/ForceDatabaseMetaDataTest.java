@@ -1,6 +1,5 @@
 package com.ascendix.jdbc.salesforce.metadata;
 
-import com.ascendix.jdbc.salesforce.metadata.ForceDatabaseMetaData;
 import org.junit.Test;
 
 import java.sql.Types;

@@ -25,34 +25,42 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 public class CachedResultSet implements ResultSet, Serializable {
+
+    private static final String SF_JDBC_DRIVER_NAME = "SF JDBC driver RS";
+    private static final Logger logger = Logger.getLogger(SF_JDBC_DRIVER_NAME);
 
     private static final long serialVersionUID = 1L;
 
     private transient Integer index;
-    private List<ColumnMap<String, Object>> rows;
+    private List<ColumnMap<String, Object>> rows = new ArrayList<>();
     private ResultSetMetaData metadata;
+    private SQLWarning warningsChain;
 
     public CachedResultSet(List<ColumnMap<String, Object>> rows) {
-        this.rows = rows;
+        this.rows = new ArrayList(rows);
     }
 
     public CachedResultSet(List<ColumnMap<String, Object>> rows, ResultSetMetaData metadata) {
-        this(rows);
+        this(new ArrayList(rows));
+        this.metadata = metadata;
+    }
+
+    public CachedResultSet(ResultSetMetaData metadata) {
+        this(new ArrayList());
         this.metadata = metadata;
     }
 
     public CachedResultSet(ColumnMap<String, Object> singleRow) {
-        this(Arrays.asList(singleRow));
+        this(new ArrayList(Arrays.asList(singleRow)));
+    }
+
+    public CachedResultSet(ColumnMap<String, Object> singleRow, ResultSetMetaData metadata) {
+        this(new ArrayList(Arrays.asList(singleRow)), metadata);
     }
 
     public Object getObject(String columnName) throws SQLException {
@@ -61,6 +69,10 @@ public class CachedResultSet implements ResultSet, Serializable {
 
     public Object getObject(int columnIndex) throws SQLException {
         return rows.get(getIndex()).getByIndex(columnIndex);
+    }
+
+    protected void addRow(ColumnMap<String, Object> row) {
+        rows.add(row);
     }
 
     private int getIndex() {
@@ -421,7 +433,8 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public void clearWarnings() throws SQLException {
-
+        logger.info("clearWarnings");
+        this.warningsChain = null;
     }
 
     public void close() throws SQLException {
@@ -565,8 +578,29 @@ public class CachedResultSet implements ResultSet, Serializable {
     }
 
     public SQLWarning getWarnings() throws SQLException {
+        return warningsChain;
+    }
 
-        return null;
+    public void addWarning(SQLWarning warn) {
+        logger.info("Adding Warning: "+warn.getMessage());
+        if (warningsChain != null) {
+            SQLWarning last = warningsChain;
+            while (last != null && last.getNextWarning() != null) last = last.getNextWarning();
+            last.setNextWarning(warn);
+        } else {
+            warningsChain = warn;
+        }
+    }
+
+    public void addWarning(String reason) {
+        logger.info("Adding Warning: "+reason);
+        if (warningsChain != null) {
+            SQLWarning last = warningsChain;
+            while (last != null && last.getNextWarning() != null) last = last.getNextWarning();
+            last.setNextWarning(new SQLWarning(reason));
+        } else {
+            warningsChain = new SQLWarning(reason);
+        }
     }
 
     public void insertRow() throws SQLException {

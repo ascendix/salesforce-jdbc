@@ -74,6 +74,7 @@ public class ForceService {
 
     private static PartnerConnection createConnectionByUserCredential(ForceConnectionInfo info)
             throws ConnectionException {
+
         ConnectorConfig partnerConfig = new ConnectorConfig();
         partnerConfig.setUsername(info.getUserName());
         partnerConfig.setPassword(info.getPassword());
@@ -87,7 +88,7 @@ public class ForceService {
             try {
                 info.setSandbox(false);
                 partnerConfig.setAuthEndpoint(buildAuthEndpoint(info));
-                    connection = Connector.newConnection(partnerConfig);
+                connection = Connector.newConnection(partnerConfig);
             } catch (ConnectionException ce) {
                 info.setSandbox(true);
                 partnerConfig.setAuthEndpoint(buildAuthEndpoint(info));

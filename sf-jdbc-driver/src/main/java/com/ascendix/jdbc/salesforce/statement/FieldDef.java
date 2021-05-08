@@ -2,16 +2,26 @@ package com.ascendix.jdbc.salesforce.statement;
 
 public class FieldDef {
 
+    /** Name of the field (or Name of the field used in aggregation) */
     private String name;
+    /** Full bname of the field with sub entity or name of the aggregation function like:
+     * 1) Owner.Name  for select Owner.Name from Account
+     * 2) maxLastName for MAX(LastName)*/
+    private String alias;
     private String type;
 
-    public FieldDef(String name, String type) {
+    public FieldDef(String name, String alias, String type) {
         this.name = name;
+        this.alias = alias;
         this.type = type;
     }
 
     public String getName() {
         return name;
+    }
+
+    public String getAlias() {
+        return alias;
     }
 
     public String getType() {

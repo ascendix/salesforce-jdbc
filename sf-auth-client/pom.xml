@@ -6,7 +6,8 @@
     <parent>
         <artifactId>salesforce-jdbc</artifactId>
         <groupId>com.ascendix.salesforce</groupId>
-        <version>1.2-SNAPSHOT</version>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>sf-auth-client</artifactId>

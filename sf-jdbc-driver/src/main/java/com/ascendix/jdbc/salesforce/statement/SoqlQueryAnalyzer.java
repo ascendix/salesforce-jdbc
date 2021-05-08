@@ -40,10 +40,22 @@ public class SoqlQueryAnalyzer {
 
     private class SelectSpecVisitor extends SOQLDataBaseVisitor<Void> {
 
+        private final String rootEntityName;
+
+        public SelectSpecVisitor(String rootEntityName) {
+            this.rootEntityName = rootEntityName;
+        }
+
         @Override
         public Void visitFieldSpec(FieldSpec fieldSpec) {
             String name = fieldSpec.getFieldName();
+
             String alias = fieldSpec.getAlias() != null ? fieldSpec.getAlias() : name;
+            // If Object Name specified - verify it is not the same as SOQL root entity
+            String objectPrefix = fieldSpec.getObjectPrefixNames().size() > 0 ? fieldSpec.getObjectPrefixNames().get(0) : null;
+            if (fieldSpec.getAlias() == null && objectPrefix != null && !objectPrefix.equals(rootEntityName)) {
+                alias = objectPrefix + "." + name;
+            }
             List<String> prefixNames = new ArrayList<>(fieldSpec.getObjectPrefixNames());
             FieldDef result = createFieldDef(name, alias, prefixNames);
             fieldDefinitions.add(result);
@@ -63,7 +75,7 @@ public class SoqlQueryAnalyzer {
                 fieldPrefixes.remove(0);
             }
             String type = findField(name, describeObject(fromObject), fld -> fld.getName()).getType().name();
-            FieldDef result = new FieldDef(alias, type);
+            FieldDef result = new FieldDef(name, alias, type);
             return result;
         }
 
@@ -75,7 +87,7 @@ public class SoqlQueryAnalyzer {
         public Void visitFunctionCallSpec(FunctionCallSpec functionCallSpec) {
             String alias = functionCallSpec.getAlias() != null ? functionCallSpec.getAlias() : functionCallSpec.getFunctionName();
             if (FUNCTIONS_HAS_INT_RESULT.contains(functionCallSpec.getFunctionName().toUpperCase())) {
-                fieldDefinitions.add(new FieldDef(alias, "int"));
+                fieldDefinitions.add(new FieldDef(alias, alias, "int"));
             } else {
                 org.mule.tools.soql.query.data.Field param = (org.mule.tools.soql.query.data.Field) functionCallSpec.getFunctionParameters().get(0);
                 FieldDef result = createFieldDef(param.getFieldName(), alias, param.getObjectPrefixNames());
@@ -106,7 +118,8 @@ public class SoqlQueryAnalyzer {
     public List getFieldDefinitions() {
         if (fieldDefinitions == null) {
             fieldDefinitions = new ArrayList<>();
-            SelectSpecVisitor visitor = new SelectSpecVisitor();
+            String rootEntityName = getQueryData().getFromClause().getMainObjectSpec().getObjectName();
+            SelectSpecVisitor visitor = new SelectSpecVisitor(rootEntityName);
             getQueryData().getSelectSpecs()
                     .forEach(spec -> spec.accept(visitor));
         }
@@ -115,7 +128,7 @@ public class SoqlQueryAnalyzer {
 
     private Field findField(String name, DescribeSObjectResult objectDesc, Function<Field, String> nameFetcher) {
         return Arrays.stream(objectDesc.getFields())
-                .filter(field -> name.equals(nameFetcher.apply(field)))
+                .filter(field -> name.equalsIgnoreCase(nameFetcher.apply(field)))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Unknown field name \"" + name + "\" in object \"" + objectDesc.getName() + "\""));
     }

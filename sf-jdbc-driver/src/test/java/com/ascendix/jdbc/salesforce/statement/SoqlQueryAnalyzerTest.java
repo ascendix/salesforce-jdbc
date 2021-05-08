@@ -2,12 +2,16 @@ package com.ascendix.jdbc.salesforce.statement;
 
 import com.sforce.soap.partner.DescribeSObjectResult;
 import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.security.NoTypePermission;
+import com.thoughtworks.xstream.security.NullPermission;
+import com.thoughtworks.xstream.security.PrimitiveTypePermission;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -169,8 +173,22 @@ public class SoqlQueryAnalyzerTest {
         try {
             String xml = new String(Files.readAllBytes(Paths.get("src/test/resources/" + sObjectType + "_desription.xml")));
             XStream xstream = new XStream();
+            XStream.setupDefaultSecurity(xstream);
+
+            // clear out existing permissions and set own ones
+            xstream.addPermission(NoTypePermission.NONE);
+            // allow some basics
+            xstream.addPermission(NullPermission.NULL);
+            xstream.addPermission(PrimitiveTypePermission.PRIMITIVES);
+            xstream.allowTypeHierarchy(Collection.class);
+
+            xstream.addImmutableType(com.sforce.soap.partner.SoapType.class, true);
+            xstream.addImmutableType(com.sforce.soap.partner.FieldType.class, true);
+            xstream.allowTypesByRegExp(new String[] { ".*" });
             return (DescribeSObjectResult) xstream.fromXML(xml);
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
